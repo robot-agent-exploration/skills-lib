@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "skill": "bimanual-box-squeeze",
+  "paths": "relative to this skill folder; frame folders hold head_camera.jpg, head_camera_depth.png, meta.json (see evidence/README.md)",
+  "examples": [
+    {
+      "task": "pnp_box",
+      "date": "2026-10-08",
+      "confirmation": "observed",
+      "frames": [
+        "evidence/frames/20261008180413b03176",
+        "evidence/frames/20261008181657903f54",
+        "evidence/frames/2026100818222501b3c5",
+        "evidence/frames/2026100818251493d682",
+        "evidence/frames/2026100818255517d483",
+        "evidence/frames/20261008182619ce6e00"
+      ],
+      "images": [
+        "evidence/images/ball_model_overlay.jpg",
+        "evidence/images/box_fit_overlay.jpg",
+        "evidence/images/left_ball_contact_vs_backoff.jpg",
+        "evidence/images/squeezed_box_lid_bulges.jpg"
+      ],
+      "executed_action": {
+        "tool": "rby1_move_body (arms + torso), rby1_gripper close (0.5 A)",
+        "arguments": {
+          "torso_squat": [0, 1.2, -2.4, 1.27, 0, 0],
+          "contact": {"right_ball_y": -0.225, "left_ball_y": 0.273, "dF_N": {"right": 14.8, "left": 7.3}},
+          "right_arm_squeezed": [-0.3231, -0.4099, 0.8747, -0.9407, -0.0432, 0.4959, 0.7123],
+          "left_arm_squeezed": [-0.3131, 0.4916, -0.8572, -0.9122, 0.1754, 0.4035, -0.0109],
+          "torso_lift": [[0, 1.15, -2.3, 1.22, 0, 0], [0, 0.95, -1.9, 1.02, 0, 0], [0, 0.75, -1.5, 0.82, 0, 0], [0, 0.524, -1.047, 0.524, 0, 0]]
+        }
+      },
+      "pose_recipe": "stance: box centre (0.446, 0.011) in base, long axis along y, near face 0.335; balls (closed grippers) centre z 0.18, tilt 0.5 rad fwd-down, x 0.445; squeeze along base y",
+      "point_reacquisition": "find_box on a frame at torso ready, head look_at (0.45, 0, 0.12); end faces by touch (|dF| > 4 N), not depth",
+      "observed_effect": "box lifted ~0.35 m with the torso only (box keeps its pixels while the camera rises); wrist arm_5 loads 63-97 %; the first arm-space lift step (IK dq 0.29 rad) then released the box and it fell upright to the floor"
+    },
+    {
+      "task": "pnp_box",
+      "date": "2026-10-08",
+      "confirmation": "observed",
+      "frames": [
+        "evidence/frames/2026100818332193d48b",
+        "evidence/frames/20261008183550a2d2d2",
+        "evidence/frames/2026100818383778ab5d"
+      ],
+      "images": [],
+      "executed_action": {
+        "tool": "scripts/plan.py grasp_waypoints + scripts/touch.py step_until_contact + rby1_move_body",
+        "arguments": {
+          "torso_squat": [0, 1.2, -2.4, 1.27, 0, -0.10],
+          "plan": "x 0.465, assumed faces y -0.22 / +0.20 after a contact stop, ball z 0.18",
+          "contact": {"right_ball_y": -0.258, "left_ball_y": 0.238, "dF_N": {"right": 10.6, "left": 12.6}},
+          "extra_squeeze": "+5 mm (half a 1 cm waypoint) -> dF right 25.2 N, left 24.4 N; loads right_arm_3 58 %, left_arm_3 52 %",
+          "torso_lift": [[0, 0.9, -1.8, 0.97, 0, -0.10], [0, 0.6, -1.2, 0.67, 0, -0.10], [0, 0.524, -1.047, 0.524, 0, -0.10]]
+        }
+      },
+      "pose_recipe": "box centre ~(0.47, -0.05) in base (5 cm right) -> chest yaw torso_5 -0.10; balls start 5 cm outside, descend to z 0.18, step in 1 cm",
+      "point_reacquisition": "depth ends (-0.249, +0.142) were wrong; the left ball hit the box top edge at y 0.22 (40 N guard) -> backed off 3 cm out / 2 cm up, re-planned with faces -0.22 / +0.20, found contact by touch",
+      "observed_effect": "box held and lifted to ~0.4 m (bottom) by the torso; wrist arm_5 73-80 %; the next arm-space lift step raised the squeeze to ~37 N, tripped right_arm_3 (101 % of 40 N m) and left right_arm_5 at 100 % so every motion was refused; the operator removed the box"
+    }
+  ],
+  "calibration": {
+    "ball": {"images": ["evidence/images/ball_calib_axis_ticks_right_gripper.jpg", "evidence/images/ball_model_overlay.jpg"],
+             "result": "closed round fingers: ball centre 0.195 m along -z_ee, visual radius ~0.03 m; touch: face ~0.05 m from the centre"},
+    "open_fingers_failure": "evidence/images/open_fingers_on_box_top_edge.jpg",
+    "connector": "evidence/images/right_gripper_blue_connector.jpg"
+  },
+  "offline_checks": {
+    "dry_run_frames_ok": ["evidence/frames/20261008180413b03176", "evidence/frames/202610081832293e419a",
+                          "evidence/frames/20261008175351eaa04d", "evidence/frames/2026100818332193d48b"],
+    "hold_check": {
+      "static_box_squat_step": {"before": "evidence/frames/20261008180733864f62", "after": "evidence/frames/20261008180751dd1d47",
+                                "result": "held=False (11.5 px from the static prediction)"},
+      "held_box_torso_lift": {"before": "evidence/frames/2026100818251493d682", "after": "evidence/frames/2026100818255517d483",
+                              "result": "held=True (1.9 px shift vs 26.5 px expected if static)"}
+    }
+  }
+}
