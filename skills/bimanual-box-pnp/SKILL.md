@@ -11,7 +11,8 @@ version: 1
 
 Session `20261009T023700Z_practice_pnp_box_61befa` (task practice_pnp_box, 2026-10-08/09). Unifies and replaces
 `bimanual-box-squeeze` (floor squeeze, torso lift) and `box-floor-to-table-squeeze` (carry, table approach,
-place), both now `deprecated`. Status `draft`: both directions succeeded once each on the robot step by step with
+place), both removed from the library on 2026-10-09 (restore with `git checkout before-deprecated-removal --
+skills/<name>`). Status `draft`: both directions succeeded once each on the robot step by step with
 the agent at the checkpoints and fixing one step by hand in each run (see Evidence); the fixes are in the code
 but not yet re-run.
 
