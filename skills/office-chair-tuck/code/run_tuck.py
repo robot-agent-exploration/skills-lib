@@ -1,0 +1,134 @@
+"""push_chair task script: step-wise controller to grasp an office chair by its backrest and tuck it into a desk.
+
+Run one step at a time from the workspace root and look at the returned frames before the next step:
+
+    python code/push_chair/run_tuck.py measure            # hands wide, bar profile, desk front, chair yaw
+    python code/push_chair/run_tuck.py square             # turn by the chair yaw and lane-change to centre on it
+    python code/push_chair/run_tuck.py grasp              # two-hand tangent-yaw grasp of the backrest top bar
+    python code/push_chair/run_tuck.py pull 0.35          # pull the chair back (right hand caged)
+    python code/push_chair/run_tuck.py turn_to <yaw>      # absolute odometry yaw, holding the chair
+    python code/push_chair/run_tuck.py drive <m>          # straight, holding the chair
+    python code/push_chair/run_tuck.py tuck               # push until bar-to-desk-edge = 0.42 m (stops on force)
+    python code/push_chair/run_tuck.py release            # open, back out, hands up
+    python code/push_chair/run_tuck.py verify             # measure the tuck (gap, centring, yaw) + frame
+
+`main(ctx, step, *args)` returns {ok, measured, why, frames, checkpoint}. State between steps (the last measurement,
+the desk-facing yaw) is kept in output/push_chair_state.json.
+"""
+import json
+import math
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import chair_ctl as C  # noqa: E402
+
+ROOT = C.geom.ROOT
+STATE = ROOT / 'output' / 'push_chair_state.json'
+TUCK_GAP = 0.42          # bar (front surface) to desk front edge when tucked: armrests just under the edge (M1, P2)
+SQUARE_TOL = 0.06        # rad: chair yaw below this is left to the grasp's tangent yaws
+CENTRE_TOL = 0.06        # m: lateral bar offset below this is not corrected
+
+
+def _load():
+    return json.loads(STATE.read_text()) if STATE.exists() else {}
+
+
+def _save(st):
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(json.dumps(st, indent=1))
+
+
+def main(ctx, step, *args, log=C.log_default):
+    st = _load()
+    if step == 'measure':
+        m = C.measure(ctx, log=log)
+        st['last'] = {k: m[k] for k in ('frame', 'profile', 'desk', 'chair_yaw')}
+        if m['desk'].get('ok'):
+            st['desk_yaw'] = C.status(ctx)['odometry']['yaw']   # robot is square to the desk when measuring it
+        _save(st)
+        prof = m['profile']
+        return {'ok': m['ok'], 'why': m['why'], 'frames': [m['frame']],
+                'measured': {'bar_centre_y': prof.get('centre_y'), 'bar_x': prof.get('x_at_centre'),
+                             'bar_z': prof.get('z_top'), 'chair_yaw': m['chair_yaw'],
+                             'desk_front_x': m['desk'].get('x_front_median')},
+                'checkpoint': {'subagent': 'haiku', 'frames': [f"runtime/frames/{m['frame']}/head_camera.jpg"],
+                               'question': 'Is the office chair directly in front of the robot with its backrest '
+                                           'towards the camera, and is anything (person, object) between the robot '
+                                           'and the chair?',
+                               'pass_if': 'chair in front, backrest towards camera, nothing in between'}}
+    if step == 'square':
+        prof = st['last']['profile']
+        yaw = st['last'].get('chair_yaw') or 0.0
+        out = {}
+        if abs(yaw) > SQUARE_TOL:
+            out['turn'] = C.base_turn(ctx, yaw, step=0.2, speed=0.1, log=log)
+        m = C.measure(ctx, log=log)
+        st['last'] = {k: m[k] for k in ('frame', 'profile', 'desk', 'chair_yaw')}
+        _save(st)
+        dy = m['profile'].get('centre_y', 0.0)
+        if m['ok'] and abs(dy) > CENTRE_TOL:
+            out['lane'] = C.lane_change(ctx, dy, log=log)
+            m = C.measure(ctx, log=log)
+            st['last'] = {k: m[k] for k in ('frame', 'profile', 'desk', 'chair_yaw')}
+            _save(st)
+        return {'ok': m['ok'], 'measured': {'moves': out, 'bar_centre_y': m['profile'].get('centre_y'),
+                                            'chair_yaw': m['chair_yaw']}, 'frames': [m['frame']], 'why': m['why']}
+    if step == 'grasp':
+        r = C.grasp_bar(ctx, st['last']['profile'], log=log)
+        if r.get('ok'):
+            st['wrist_base'] = r['wrist_base']
+            _save(st)
+        fid = C.observe(ctx, head=(0.0, 0.75))
+        r['frames'] = [fid]
+        r['checkpoint'] = {'subagent': 'haiku', 'frames': [f'runtime/frames/{fid}/head_camera.jpg'],
+                           'question': 'Are both robot grippers closed around the top bar of the chair backrest?',
+                           'pass_if': 'yes for both (widths 15-30 mm also say so)'}
+        r.pop('targets', None)
+        return r
+    if step == 'pull':
+        return C.pull(ctx, float(args[0]), log=log)
+    if step == 'turn_to':
+        return C.base_turn_to(ctx, float(args[0]) if args else st['desk_yaw'], log=log)
+    if step == 'drive':
+        return C.base_drive(ctx, float(args[0]), step=0.15, speed=0.05, log=log)
+    if step == 'tuck':
+        desk_x = st['last']['desk'].get('x_front_median')
+        bar_x = st['last']['profile'].get('x_at_centre')
+        if desk_x is None or bar_x is None:
+            return {'ok': False, 'why': 'measure the desk and the bar first (robot square to the desk)'}
+        dist = desk_x - bar_x - TUCK_GAP
+        log(f'  tuck: desk {desk_x:.3f} bar {bar_x:.3f} -> push {dist:.3f}')
+        if dist <= 0:
+            return {'ok': True, 'moved': 0.0, 'why': 'already tucked'}
+        far = max(0.0, dist - 0.10)
+        r = C.push(ctx, far, step=0.10, log=log) if far > 0 else {'ok': True, 'moved': 0.0}
+        if r['ok']:
+            r2 = C.push(ctx, dist - r['moved'], step=0.03, speed=0.03, log=log)
+            r = {'ok': r2['ok'], 'moved': r['moved'] + r2['moved'], 'why': r2.get('why', '')}
+        return r
+    if step == 'release':
+        return C.release(ctx, log=log)
+    if step == 'verify':
+        m = C.measure(ctx, log=log)
+        desk_x = m['desk'].get('x_front_median')
+        bar_x = m['profile'].get('x_at_centre')
+        gap = None if desk_x is None or bar_x is None else round(desk_x - bar_x, 3)
+        ok = gap is not None and abs(gap - TUCK_GAP) < 0.06 and abs(m['profile'].get('centre_y', 1)) < 0.10
+        return {'ok': ok, 'frames': [m['frame']],
+                'measured': {'bar_to_desk_edge': gap, 'bar_centre_y': m['profile'].get('centre_y'),
+                             'chair_yaw': m['chair_yaw']},
+                'checkpoint': {'subagent': 'haiku', 'frames': [f"runtime/frames/{m['frame']}/head_camera.jpg"],
+                               'question': 'Is the office chair pushed under the light-wood desk, facing it squarely '
+                                           '(backrest parallel to the desk edge), with its armrests at or under the '
+                                           'desk edge, and roughly centred on the desk?',
+                               'pass_if': 'yes'}}
+    return {'ok': False, 'why': f'unknown step {step}'}
+
+
+if __name__ == '__main__':
+    sys.path.insert(0, str(ROOT))
+    from api.runtime import Context
+    with Context() as ctx:
+        print(json.dumps(main(ctx, sys.argv[1], *sys.argv[2:]), indent=1, default=str))
