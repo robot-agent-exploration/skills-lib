@@ -90,6 +90,10 @@ Task `tasks/pnp_box.py` (checkpoints marked cp: the run stops, the agent looks a
 - lift / carry: |dF| 8-30 N, every joint load < 130 %.
 - placement: touchdown dFz > 4 N; after release |dF| < 4 N; verify height 0.21-0.31 m and inside the top.
 
+### Perception checkpoints
+
+None in this deprecated version (its agent checkpoints were image reviews without subagent briefs). The current checkpoint table is in `bimanual-box-pnp` (## Checks).
+
 ## Failure modes
 
 1. **A2 crash (2026-10-08)**: a half-occluded box gave a wrong pose; an unchecked close-range drive pushed the box

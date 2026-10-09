@@ -167,6 +167,10 @@ From the procedure and the code:
 - Offline: `scripts/grasp.py --selftest` (4 dry-run plans + 2 hold checks on the bundled
   frames) must pass before a robot run.
 
+### Perception checkpoints
+
+None in this deprecated version (its agent checkpoints were image reviews without subagent briefs). The current checkpoint table is in `bimanual-box-pnp` (## Checks).
+
 ## Failure modes
 
 1. Ball descended onto the box top edge -> 40 N contact guard: depth ends were 3-5 cm short.
