@@ -87,9 +87,11 @@ touchdown 4 N, path stop 25 points, segment 0.30 m / 0.6 rad, table stance edge 
 Gemini (`core/vlm.py`): images downscaled to 640 px; `max_tokens` 16384 (reasoning shares it; 2048 truncated an
 answer); effort `low` for points / checks (median 5.9 s, 2.2-47 s), `minimal` for segmentation (3-6 s, the docs'
 recommendation); a full-size image once timed out and kept a $2.81 reservation. The mask edge repeats to
-~1.5 cm (0.391 / 0.415 m from two calls on the same frame); placing tolerates it (near face 6.5 cm past the edge,
+~1.5 cm (0.391 once, then 0.414-0.417 in 5 calls on the same frame; coarse 6-10-vertex polygons may sit ~2 cm
+inside the true edge); placing tolerates it (near face 6.5 cm past the edge,
 touchdown by force). The mask polygon comes back as
-[y, x] normalized to the full image (like box_2d), not the documented [x, y]. Gemini calls are serialized with
+[y, x] normalized to the full image (like box_2d), not the documented [x, y] - also when the prompt explicitly
+asks for [x, y] (4/4 answers, test 2026-10-09); `segment` decides the order per answer by containment in box_2d. Gemini calls are serialized with
 robot calls by the host: ask between motions.
 
 ## Checks
