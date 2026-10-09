@@ -1,10 +1,10 @@
 ---
 name: box-floor-to-table-squeeze
 description: Pick a closed cardboard box (~0.40 x 0.22 x 0.26 m, ~1.4 kg) off the floor with a bimanual closed-ball squeeze, lift it to carry height (torso + controller Cartesian arm lift with squeeze regulation), drive it to a black-top table and place it there by wrist-force touchdown. Modular primitives (find / approach / grasp / lift / approach table / place / verify) run checkpoint by checkpoint with the agent in the loop; every base segment is checked against fresh depth of its swept footprint.
-status: draft
+status: deprecated
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 ---
 
 # Box from the floor onto a table (bimanual squeeze, agent checkpoints)
@@ -14,6 +14,10 @@ Session `20261009T000539Z_pnp_box_f75f61` (task pnp_box, 2026-10-08). Builds on 
 higher than the torso allows, carrying, choosing / approaching the table, placing, verifying, and safe base
 motion. Status `draft`: one manual success (M1) and one success run checkpoint by checkpoint with the agent
 deciding (A3); two automated runs failed (A1 backend error; A2 **crashed into the cabinet**, see Failure modes).
+
+## Deprecated
+
+Replaced by `bimanual-box-pnp` (session 20261009T023700Z_practice_pnp_box_61befa, 2026-10-09): the same squeeze / carry / place primitives refactored into one modular package (core, perception, motion, tasks) with both directions (floor -> table and table -> floor), Gemini-seeded perception (box / table identity, full visibility, table-top segmentation mask for the edge) instead of the colour / size / dark-pixel rules, subagent-monitored steps (STOP-file guard) and the set-down / edge fixes from its runs. This folder is kept unchanged for reference (v1 code in `code/rby1_tasks/`).
 
 ## When to use
 

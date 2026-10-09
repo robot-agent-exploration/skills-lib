@@ -1,0 +1,157 @@
+---
+name: bimanual-box-pnp
+description: Pick and place a closed cardboard box (~0.40 x 0.22 x 0.26 m, ~1.4 kg) between the floor and a black-top table with the RB-Y1's bimanual closed-ball squeeze - one modular package (core / perception / motion / tasks) with two task compositions (floor_to_table, table_to_floor), Gemini-seeded perception with depth for metres, perception-checked base motion, and checkpoint briefs for subagent / Gemini review and STOP-file monitoring.
+status: draft
+robot: Rainbow RB-Y1
+entry: code/run.py
+version: 1
+---
+
+# Bimanual box pick-and-place (floor <-> table)
+
+Session `20261009T023700Z_practice_pnp_box_61befa` (task practice_pnp_box, 2026-10-08/09). Unifies and replaces
+`bimanual-box-squeeze` (floor squeeze, torso lift) and `box-floor-to-table-squeeze` (carry, table approach,
+place), both now `deprecated`. Status `draft`: both directions succeeded once each on the robot step by step with
+the agent at the checkpoints and fixing one step by hand in each run (see Evidence); the fixes are in the code
+but not yet re-run.
+
+## When to use
+
+- A closed carton about 0.40 x 0.22 x 0.26 m (long side 0.36-0.42), upright, on the floor with ~0.6 m clear floor
+  in front of a long side, or on a table with a dark top at 0.65-0.75 m standing within ~0.15 m of an edge the
+  robot can face on open floor. Grippers carry the round add-on fingers, closed into "balls" (centre 0.195 m along
+  -z_ee).
+- `floor_to_table`: box on the floor in view (<= ~2.5 m), the table ahead behind it (straight final approach).
+  `table_to_floor`: box on the table in view, open floor around the robot for the in-place turns and behind the
+  grasp stance for the 0.35 m reverse.
+- Tested: one carton, one black-top drawer island (1.0 x 0.62 m), one lab, both directions once.
+- Not for: boxes wider than ~0.5 m or heavier than ~2 kg (wrist loads), tables above ~0.75 m, boxes deep inside a
+  table, cluttered approaches, unattended use (draft).
+
+## Preconditions
+
+Checked in code: armed, no EMO / fault (`core/posture.prepare`, also homes and closes the grippers and sets torso
+`ready` / `zero` and arms `ready`); nothing held (world); the box localized fully visible (Gemini `box_fully_visible`
++ depth size gates - partial views caused the v1 crash A2); stance checks before grasping (box 0.47 m ahead for the
+floor, 0.60-0.62 m for the table, yaw and offset tolerances); every base segment checked against fresh depth of
+its swept footprint; a reverse only along the straight path just driven (+3 cm odometry tolerance).
+
+## Procedure
+
+Module map (`code/boxpnp/`):
+
+| Module | What |
+|---|---|
+| `core/robot.py`, `kin.py`, `geom.py`, `world.py`, `frames.py`, `footprint.py` | tool wrappers and body constants; pinocchio FK / IK incl. the ball tool; base <-> odometry; objects in the odometry frame + grip data; frame loading, `pixel_point`, `ray_plane`; robot footprint for base checks |
+| `core/vlm.py` | Gemini: `point` (named points, flags, lists), `check` (yes / no + reason), `segment` (official box_2d + polygon masks), budget / latency log |
+| `core/runner.py` | Step runner: checkpoints with briefs, resume, `status.json` heartbeat, STOP-file guard on motion tools |
+| `perception/locate.py`, `sensing.py`, `box.py`, `table.py` | Gemini-seeded box (`locate_box`) and table top (`locate_table_mask`, `table_near_edge` from the segmentation mask + depth); find / relocate / verify on table or floor / check held; depth-only detectors as fallback |
+| `motion/navigation.py` | turn-drive-turn plans, swept-footprint depth check per segment, `plan_stance_straight` (straight final leg, clearance to known surfaces), `look_around_torso` (torso yaw +-1.9 to see beside / behind before in-place turns), `check_surface_stance`, `final_table_approach`, `retreat` |
+| `motion/squeeze.py`, `touch.py` | ball-tool IK pre-grasp, squat, touch by wrist force, +4 mm squeeze, grasp from floor / table, releases |
+| `motion/carry.py`, `place.py` | torso paths with arms fixed, squeeze-regulated Cartesian z moves, lift from floor, recentre, set down on the floor, place on a table by force touchdown |
+| `tasks/floor_to_table.py`, `tasks/table_to_floor.py` | the two compositions (lists of Step) |
+
+`table_to_floor`: prepare (torso zero) -> find_table (Gemini mask) -> find_box (cp) -> plan_stance (cp: straight
+0.35 m final leg, box 0.62 m ahead, facing the box) -> look_around (torso yaw) -> drive_stance (per-segment depth
+check) -> check_stance (cp) -> grasp from the table (cp: hands above the ends, down beside them, touch, squeeze,
+lift 8 cm) -> retract (box onto the base x axis, hands to x 0.375) -> back_off (reverse the straight leg) ->
+set_down (cp) -> verify_floor (depth top height + Gemini).
+
+`floor_to_table`: prepare -> find_box (cp) -> plan_approach -> drive_approach -> check_stance (loops) -> grasp from
+the floor (cp: squat to lowest, touch, squeeze) -> lift (cp: torso up with arms fixed, hands to ee z 0.92, torso
+zero, hands to 1.17) -> find_table -> approach_table (cp: Gemini-mask edge, drive to edge 0.385 m ahead) -> place
+(cp: hands forward so the near face is 6.5 cm past the edge, 1 cm steps down until base-frame Fz changes > 4 N,
+release 2.5 cm out + up) -> verify (cp) -> retreat 0.3 m.
+
+Set-down rules (from P1): squeeze capped at 20 N while lowering (26 N put left_arm_5 at 131 %), arm lowering stops
+at 125 % load and the torso does the rest; the final drop is the squat straight from torso_1 0.8 to the lowest
+posture WITHOUT lean (0.9-1.1 is where the knee link meets the top of a box held this close; lean 0 puts the box
+~2 cm further forward); no controller Cartesian moves at the squat (one twisted right_arm_6 to 210 %).
+
+## Code
+
+```
+python3 skill-library/skills/bimanual-box-pnp/code/run.py table_to_floor            # to the first checkpoint
+python3 skill-library/skills/bimanual-box-pnp/code/run.py table_to_floor --resume output/runs/<run> --start <next>
+python3 skill-library/skills/bimanual-box-pnp/code/run.py floor_to_table [--resume ... --start ...]
+MPLCONFIGDIR=$TMPDIR python3 skill-library/skills/bimanual-box-pnp/code/offline_test.py [--gemini]
+```
+
+`main(ctx, task, start=None, resume=None, checkpoints=True, params=None, stop_after=None, **task_kwargs)` ->
+`{ok, measured, why, checkpoint: {step, next, brief}, next, outdir, gemini}`. Outputs in
+`output/runs/<time>_<task>/` (log.txt, report_*.json, world.json, status.json, path_*.jpg). Parameters (tested):
+table_to_floor `stance_d` 0.60-0.62, `straight` 0.35, `face_blend` 0 (box-facing; 0.5 tested in P1);
+floor_to_table `carry_z` 1.17. Inside: BALL_Z 0.18 above the support, standoff 0.09, squeeze +4 mm, touch 4.5 N,
+touchdown 4 N, path stop 25 points, segment 0.30 m / 0.6 rad, table stance edge 0.385 m.
+
+Gemini (`core/vlm.py`): images downscaled to 640 px; `max_tokens` 16384 (reasoning shares it; 2048 truncated an
+answer); effort `low` for points / checks (median 5.9 s, 2.2-47 s), `minimal` for segmentation (3-6 s, the docs'
+recommendation); a full-size image once timed out and kept a $2.81 reservation. The mask edge repeats to
+~1.5 cm (0.391 / 0.415 m from two calls on the same frame); placing tolerates it (near face 6.5 cm past the edge,
+touchdown by force). The mask polygon comes back as
+[y, x] normalized to the full image (like box_2d), not the documented [x, y]. Gemini calls are serialized with
+robot calls by the host: ask between motions.
+
+## Checks
+
+- find: Gemini says the box is present and fully visible; depth top-face rectangle 0.28-0.50 x 0.10-0.30 m,
+  top 0.18-0.34 m above the support; Gemini corners within 8 cm of the depth rectangle (measured 0.5-1.5 cm).
+- base segments: <= 25 obstacle depth points in the swept footprint; known surfaces >= 3 cm from the swept base;
+  the box re-detected within 10 cm of its prediction.
+- grasp: both touches |dF| > 4.5 N within 11 cm; squeeze min |dF| >= 9 N. Lift-off is measured by depth (box top
+  height), not asked (Gemini said "resting" for a box lifted 7 cm).
+- carry / set-down: squeeze 8-30 N (20 N cap when lowering), loads < 130 % (125 % stop when lowering).
+- placement: touchdown dFz > 4 N; verify: box top 0.21-0.31 m above the table top, centre inside it, Gemini yes.
+
+### Perception checkpoints
+
+| Step | Subagent | Frames | Question | Expected answer | Pass if | On fail |
+|---|---|---|---|---|---|---|
+| find_box (both) | haiku / Gemini check | the find frame | Is the cardboard box standing alone on the support, fully visible, nothing on or leaning on it? | yes / no + why | yes | stop, ask |
+| plan_stance | haiku | path_plan_stance_*.jpg | Is the floor under the drawn footprint free of people and objects (the target cabinet may be close)? | yes / no + what | yes | replan |
+| check_stance | haiku | relocate frame | Is the box straight ahead, centred between the arms? | yes / no | yes | stop |
+| grasp | haiku | frame after the squeeze | Is the box held between both grippers at the middle of each end face, level? | yes / no + why | yes | lower back, release, stop |
+| lift | haiku | lift frame | Is the box held level, clear of the floor? | yes / no | yes | set down, stop |
+| approach_table | haiku | edge view | Is the table top directly in front of the held box, nothing where it goes? | yes / no | yes | stop |
+| place / set_down | haiku + Gemini check (verify) | verify frame | Is the box standing on the top / floor with both grippers clear? | yes / no | yes | stop |
+| any motion step (monitor) | haiku, background | runtime/stream newest frame every ~10 s | box tipping / slipping / pushed, base pushing the box, a person within 0.5 m? | ok / anomaly | ok | write <run>/STOP + rby1_hold |
+
+Monitor protocol: the runner writes `<run>/status.json`; a background haiku subagent reads it and
+`python3 -m api.stream latest`, looks at the newest frame and on a clear anomaly writes `<run>/STOP`; the next
+motion call raises `StopRequested`, the runner holds and reports. Measured: ~9-11 s per check, 28 checks over P1 /
+P2 without a false stop.
+
+## Failure modes
+
+1. Set-down by lowering the arms (table-grasp arm shape, squeeze 26 N) -> left_arm_5 131 %: stopped by the load
+   check; now squeeze cap + load stop + torso squat (P1).
+2. Box touched the robot's front during the squat at torso_1 0.98 (knee link vs box top); now squat straight to
+   lowest without lean (P1).
+3. Controller Cartesian forward move at the squat twisted right_arm_6 to 210 % (torque stop); no Cartesian moves
+   at the squat; release by IK joint move (P1, also v1 failure 6).
+4. Far dark-pixel table fit half-hidden by the held box read the edge 17 cm too far; the per-segment depth check
+   stopped the drive at 3434 hits; now Gemini mask edge (P2).
+5. Gemini pointing with "left / right of the box" put both points on one side when an arm hid the right side
+   (edge 0.302 vs 0.394 m); masks / several points along the visible edge instead; views with < 400 masked top
+   points are rejected (P2).
+6. Gemini answer truncated at max_tokens 2048 -> depth-only fallback ran; now 16384 (P2).
+7. A cancelled `request_operator` kept blocking the host's call queue until its timeout: don't cancel it.
+8. From v1: partial box view -> wrong pose -> crash A2 (now Gemini full-visibility + size gates); base backend
+   error stops the run (no retry).
+
+## Evidence
+
+| Run | Date | Task | Outcome | Unattended | Conditions |
+|---|---|---|---|---|---|
+| P1 | 2026-10-08 | table_to_floor | success (agent finished the set-down) | no | box on the island, robot 0.55 m from it at a 0.47 rad skew |
+| P2 | 2026-10-09 | floor_to_table | success (agent fixed the edge measurement) | no | box on the floor 0.67 m ahead, island ~1 m ahead |
+
+![P1 box on the table](evidence/images/p1_01_box_on_table_find_box.jpg)
+![P1 plan with a straight final leg](evidence/images/p1_02_plan_stance_straight_leg.jpg)
+![P1 look around by torso yaw](evidence/images/p1_03_look_around_torso_right_rear.jpg)
+![P1 squeezed on the table](evidence/images/p1_04_squeezed_on_table.jpg)
+![P1 box on the floor](evidence/images/p1_05_box_on_floor_released.jpg)
+![P2 lifted](evidence/images/p2_02_lifted_carry.jpg)
+![P2 Gemini table mask (good view top, rejected view bottom)](evidence/images/p2_04_gemini_table_mask_good_and_bad_view.jpg)
+![P2 placed](evidence/images/p2_05_placed_on_table.jpg)
+![Perception comparison: Gemini green, haiku magenta, depth red](evidence/images/perception_gemini_vs_haiku_vs_depth.jpg)
