@@ -1,10 +1,10 @@
 ---
 name: bimanual-box-squeeze
 description: Pick a closed box that is wider than the 0.1 m gripper (e.g. a ~0.40 x 0.22 x 0.25 m carton) off the FLOOR with the RB-Y1 - both grippers closed into "balls", squat to lowest, touch the two end faces by wrist force, squeeze, and lift with the TORSO only. Includes stance planning about the wheel axle, ball-tool IK, depth box localization and a staged controller (scripts/grasp.py). Read the failure list before lifting further with the arms.
-status: draft
+status: deprecated
 robot: Rainbow RB-Y1
 entry: scripts/grasp.py
-version: 2
+version: 3
 ---
 
 # Bimanual ball-squeeze of a box on the floor
@@ -38,6 +38,10 @@ Note: the controller modes take the hand to `ee_*`; the closed round fingers' ba
 is 0.195 m along -z_ee (Hardware facts), so convert ball targets to `ee_*` targets first.
 Verify the new path in small steps and record the runs in `evidence/runs.jsonl`; the skill
 stays `draft` until two unattended successful runs.
+
+## Deprecated
+
+Replaced by `bimanual-box-pnp` (session 20261009T023700Z_practice_pnp_box_61befa, 2026-10-09): its floor squeeze (closed-ball tool 0.195 m along -z_ee, stance 0.46-0.47 m, touch by wrist force, +4-5 mm squeeze, torso lift) lives on in `bimanual-box-pnp` (`motion/squeeze.py`, `motion/carry.py`) with the controller tools, carry, placing and both directions. Kept for its evidence and the original notes.
 
 ## When to use
 
@@ -162,6 +166,10 @@ From the procedure and the code:
   static box 11.5 px from the static prediction).
 - Offline: `scripts/grasp.py --selftest` (4 dry-run plans + 2 hold checks on the bundled
   frames) must pass before a robot run.
+
+### Perception checkpoints
+
+None in this deprecated version (its agent checkpoints were image reviews without subagent briefs). The current checkpoint table is in `bimanual-box-pnp` (## Checks).
 
 ## Failure modes
 
