@@ -4,7 +4,7 @@ description: Pick a closed box that is wider than the 0.1 m gripper (e.g. a ~0.4
 status: draft
 robot: Rainbow RB-Y1
 entry: scripts/grasp.py
-version: 1
+version: 2
 ---
 
 # Bimanual ball-squeeze of a box on the floor
@@ -15,6 +15,29 @@ is the agent's own, rearranged into the library's sections; the original is
 `evidence/ORIGINAL_SKILL.md`. Status `draft`: the grasp and torso lift worked twice on the
 robot run step by step (not unattended); the chained controller `scripts/grasp.py` has
 only been dry-run offline.
+
+## Tools available now (operator note, 2026-10-09)
+
+This skill was written with fewer tools than a session has now. Its own IK
+(`scripts/kinematics.py`, scipy on a downloaded URDF) and its joint-space stepping were
+workarounds for tools that did not exist then. Before re-running it, consider these
+(numbers measured on this robot, see the robot-interface skill):
+
+| Now available | What it replaces in this skill | Measured |
+|---|---|---|
+| `rby1_optimal_control` (component `body`): the robot controller's **whole-body IK** with targets for both hands at once, joint preferences and a centre-of-mass target | `kinematics.solve_ball`, `plan.grasp_waypoints` and two-arm `rby1_move_body` stepping; a two-hand squeeze or lift as one command with the torso helping | 4–5 cm hand targets within 2–3.3 mm in 3.8 s; 10 cm within 0.2 mm in 7.7 s; paths within 1 mm of straight |
+| `rby1_cartesian` (`right_arm` / `left_arm` / `body`): straight-line hand moves solved by the controller | the 1 cm inward touch steps in `touch.step_until_contact` (straight, exact steps) | 5 cm in 2.4 s within 0.1–0.2 mm, within 0.4 mm of straight |
+| `rby1_move_eef` now uses the controller's Cartesian command | single-arm moves | 0.1–0.2 mm |
+| `rby1_joint_impedance` (one arm): compliant joint moves | a softer final squeeze | ends about 0.018 rad short by design |
+| `rby1_fk`, `rby1_check`: poses, collisions, joint loads and "would this be accepted" without moving | offline checks of the plan | — |
+| `robot-model/` in every workspace: the vendor URDF + meshes and `model_v1.0.standard.urdf` for pinocchio / yourdfpy (pinocchio is installed) | `assets/model.urdf` and the scipy FK | standard copy matches the vendor SDK to 1e-9 |
+| Torque stop at 150 % of rating (was 100 %), never locking motions that hold or ease a load; wrist force stop 60 N (was 40 N) | Failure 4b, where a squeezed box at 100 % on right_arm_5 blocked every motion | — |
+| Forward lean up to about +0.7 rad with the arms out (at `ready` height), squat to `lowest` | reaching the floor box | not yet run beyond +0.15 rad lean |
+
+Note: the controller modes take the hand to `ee_*`; the closed round fingers' ball centre
+is 0.195 m along -z_ee (Hardware facts), so convert ball targets to `ee_*` targets first.
+Verify the new path in small steps and record the runs in `evidence/runs.jsonl`; the skill
+stays `draft` until two unattended successful runs.
 
 ## When to use
 
@@ -157,7 +180,7 @@ Operator note (harness changes after this session, 2026-10-08): the torque stop 
 no longer blocks motions that hold or ease its load, so failure 4b would no longer lock
 every motion; the wrist force stop is 60 N (40 N here). The squeeze still loads arm_5 at
 about 0.3 N m per newton: keep it light. `rby1_ik` no longer exists; the controller's own
-Cartesian and whole-body modes exist but are off until characterized.
+Cartesian and whole-body modes are now available (see "Tools available now").
 
 ## Evidence
 
