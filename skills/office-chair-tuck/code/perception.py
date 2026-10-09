@@ -193,5 +193,9 @@ def desk_front(frame, z_range=(0.70, 0.80), x_range=(0.6, 2.4), y_half=0.9, v_mi
         if len(s) > 50:
             bins.append((round(float(yb + 0.05), 2), round(float(np.percentile(s[:, 0], 1)), 3)))
     xs = np.array([b[1] for b in bins])
-    return {'ok': True, 'bins': bins, 'x_front_median': round(float(np.median(xs)), 3),
+    med = float(np.median(xs))
+    on = [b[0] for b in bins if abs(b[1] - med) < 0.06]          # bins on the straight front edge
+    return {'ok': True, 'bins': bins, 'x_front_median': round(med, 3),
+            'y_extent': [min(on), max(on)] if on else None,
+            'centre_y': round((min(on) + max(on)) / 2, 3) if on else None,
             'height': round(float(np.median(q[:, 2])), 3)}

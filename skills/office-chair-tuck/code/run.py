@@ -2,7 +2,7 @@
 
     main(ctx, step='verify', args=())  ->  {ok, measured, why, frames, checkpoint}
 
-Steps: measure | square | grasp | pull <m> | turn_to <yaw> | drive <m> | tuck | release | verify.
+Steps: find | approach [plan] | desk | measure | square | grasp | transport [pull] [plan] | pull <m> | turn_to <yaw> | drive <m> | tuck | release | verify.
 """
 import importlib.util
 import sys

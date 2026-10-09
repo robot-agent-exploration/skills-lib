@@ -378,3 +378,107 @@ def measure(ctx, log=log_default):
     yaw = chair_yaw(prof) if prof.get('ok') else None
     return {'ok': bool(prof.get('ok')), 'frame': fid, 'profile': prof, 'desk': desk,
             'chair_yaw': None if yaw is None else round(yaw, 3), 'why': prof.get('why', '')}
+
+
+# ---------- approach the chair from afar (Gemini + depth) ----------
+STANDOFF = 0.88          # base origin to chair column when grasping (bar front ≈0.60-0.65 ahead)
+PRE_DIST = 1.40          # pre-pose on the chair axis, column distance
+CLEAR_R = 0.75           # robot axle path must stay this far from the chair column
+
+
+def find_chair(ctx, log=log_default, heads=((0.0, 0.5), (-0.45, 0.5), (0.45, 0.5))):
+    """Look around with the head until Gemini + depth localize the chair. -> chair_pose dict (base frame)."""
+    import perception as P
+    last = None
+    for h in heads:
+        fid = observe(ctx, head=h)
+        r = P.chair_pose(ctx, fid, log=log)
+        last = r
+        if r.get('ok'):
+            r['frame_id'] = fid
+            return r
+    return last or {'ok': False, 'why': 'no observation'}
+
+
+def _seg_point_dist(a, b, p):
+    a, b, p = map(np.asarray, (a, b, p))
+    ab = b - a
+    t = np.clip(np.dot(p - a, ab) / max(np.dot(ab, ab), 1e-9), 0, 1)
+    return float(np.linalg.norm(a + t * ab - p))
+
+
+def plan_approach(chair):
+    """Base moves [(kind, value)] from the current pose (origin, heading 0) to stand square behind the chair."""
+    col = np.array(chair['column'])
+    phi = chair['facing_rad']
+    d = np.array([math.cos(phi), math.sin(phi)])
+    pre = col - PRE_DIST * d
+    axle0 = np.array([0.228, 0.0])
+    pre_axle = pre + 0.228 * d
+    waypoints = [pre_axle]
+    if _seg_point_dist(axle0, pre_axle, col) < CLEAR_R:
+        side = np.array([-d[1], d[0]])
+        if np.dot(axle0 - col, side) < 0:
+            side = -side
+        waypoints = [col + 1.2 * side - 0.3 * d, pre_axle]
+    moves, heading, pos = [], 0.0, axle0
+    for w in waypoints:
+        v = w - pos
+        h = math.atan2(v[1], v[0])
+        moves += [('turn', math.atan2(math.sin(h - heading), math.cos(h - heading))), ('drive', float(np.linalg.norm(v)))]
+        heading, pos = h, w
+    moves += [('turn', math.atan2(math.sin(phi - heading), math.cos(phi - heading))),
+              ('drive', PRE_DIST - STANDOFF)]
+    return {'moves': [(k, round(v, 3)) for k, v in moves], 'pre': pre.round(3).tolist(),
+            'waypoints': [np.round(w, 3).tolist() for w in waypoints]}
+
+
+def execute_moves(ctx, moves, log=log_default, look=True):
+    """Run planned base moves (robot not holding anything); observe after each drive for the agent's review."""
+    frames = []
+    for kind, val in moves:
+        if abs(val) < 0.01:
+            continue
+        if kind == 'turn':
+            r = base_turn(ctx, val, step=0.6, speed=0.2, log=log)
+        else:
+            r = base_drive(ctx, val, step=0.5, speed=0.1, log=log)
+        if not r['ok']:
+            return {'ok': False, 'why': r.get('why'), 'frames': frames}
+        if look and kind == 'drive':
+            frames.append(observe(ctx, head=(0.0, 0.5)))
+    return {'ok': True, 'frames': frames}
+
+
+# ---------- desk memory (odometry) and transport planning with the chair held ----------
+def to_odom(odom, p):
+    """Robot-frame point -> odometry frame (odom = {'x','y','yaw'} of the base origin)."""
+    c, s = math.cos(odom['yaw']), math.sin(odom['yaw'])
+    return [odom['x'] + c * p[0] - s * p[1], odom['y'] + s * p[0] + c * p[1]]
+
+
+def from_odom(odom, q):
+    c, s = math.cos(odom['yaw']), math.sin(odom['yaw'])
+    dx, dy = q[0] - odom['x'], q[1] - odom['y']
+    return [c * dx + s * dy, -s * dx + c * dy]
+
+
+def plan_transport(desk_front_centre, desk_yaw_rel, pull_back=0.30, pre_gap=0.80):
+    """Moves for the robot holding the chair (column STANDOFF ahead) from its current pose (origin, heading 0) to
+    square in front of the desk with the bar `pre_gap` from the desk edge, ready for `tuck`.
+    desk_front_centre: robot-frame point on the desk's front edge; desk_yaw_rel: heading that faces the desk."""
+    E = np.array(desk_front_centre, float)
+    n = np.array([math.cos(desk_yaw_rel), math.sin(desk_yaw_rel)])
+    bar_ahead = STANDOFF - 0.25                         # bar front ≈0.25 m behind the column
+    base_t = E - (pre_gap + bar_ahead) * n
+    axle_t = base_t + 0.228 * n
+    axle0 = np.array([0.228 - pull_back, 0.0])
+    v = axle_t - axle0
+    h = math.atan2(v[1], v[0])
+    dist = float(np.linalg.norm(v))
+    if abs(h) > math.pi / 2:                           # target behind: reverse instead of turning around
+        h -= math.copysign(math.pi, h)
+        dist = -dist
+    moves = [('drive', -pull_back), ('turn', round(h, 3)), ('drive', round(dist, 3)),
+             ('turn_to_rel', round(desk_yaw_rel, 3))]
+    return {'moves': moves, 'target_base': base_t.round(3).tolist(), 'heading_to_target': round(h, 3)}

@@ -4,7 +4,7 @@ description: Grasp a wheeled office chair by the top bar of its mesh backrest wi
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 ---
 
 # Office chair: grasp the backrest and tuck / park the chair
@@ -25,6 +25,13 @@ version: 1
 - Before `tuck`: the robot square to the desk and `measure` has seen the desk front (desk front x stored).
 
 ## Procedure
+0. From afar: `find` (head scan 0 / ±0.45, Gemini chair points + depth -> column, facing), `approach` (plan:
+   turn-drive-turn to a pre-pose 1.4 m behind the column on the chair axis, a side waypoint when the straight
+   path passes within 0.75 m of the chair, then 0.52 m straight in to the 0.88 m standoff; `approach plan` only
+   prints it). Once, while square in front of the desk: `desk` stores the desk front centre and the desk-facing
+   yaw in odometry coordinates. After the grasp, `transport [pull_back]` plans and runs pull back (right caged),
+   turn towards the target, drive (or reverse), turn to the stored desk yaw, leaving the bar 0.8 m from the
+   edge for `tuck`.
 1. `measure`: hands wide (y ±0.42-0.46), head (0, 0.66), observe; depth+colour bar profile (dark points
    z 0.95-1.06 per 2.5 cm y bin: front x, top z), flat-top centre, curvature, chair yaw from the bar ends; desk front
    edge from light-wood colour at z 0.70-0.80.
@@ -42,7 +49,10 @@ version: 1
 6. `release`: open, back out 0.10 m along f and 4 cm up, hands up. 7. `verify`: gap, centring, yaw + checkpoint.
 
 ## Code
-`code/run.py:main(ctx, step, args)` -> `run_tuck.main` (state in `output/push_chair_state.json`). Modules:
+`code/run.py:main(ctx, step, args)` -> `run_tuck.main` (state in `output/push_chair_state.json`); steps: find,
+approach [plan], desk, measure, square, grasp, transport [pull_back] [plan], pull, turn_to, drive, tuck, release,
+verify. `find`/`approach`/`desk`/`transport` (v2) are planned with the axle model (turns pivot about the drive
+axle at +0.228 m) and still need their first end-to-end test. Modules:
 `chair_ctl.py` (primitives: `bar_profile`, `bar_grasp_targets`, `grasp_bar`, `release`, `hands_up`,
 `base_drive`, `base_turn`, `base_turn_to`, `pull`, `push`, `lane_change`, `measure`, `chair_yaw`), `perception.py`
 (`desk_front`, Gemini `chair_pose` / `desk_edge` for coarse localization from afar), `geom.py` (depth -> base frame),

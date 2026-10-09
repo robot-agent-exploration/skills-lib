@@ -20,6 +20,8 @@ import math
 import sys
 from pathlib import Path
 
+import numpy as np
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import chair_ctl as C  # noqa: E402
@@ -108,6 +110,67 @@ def main(ctx, step, *args, log=C.log_default):
             r2 = C.push(ctx, dist - r['moved'], step=0.03, speed=0.03, log=log)
             r = {'ok': r2['ok'], 'moved': r['moved'] + r2['moved'], 'why': r2.get('why', '')}
         return r
+    if step == 'find':
+        ch = C.find_chair(ctx, log=log)
+        if ch.get('ok'):
+            ch['odom'] = C.status(ctx)['odometry']
+            st['chair'] = {k: ch[k] for k in ('column', 'facing_rad', 'bar_centre', 'bar_z', 'odom', 'frame_id')}
+            _save(st)
+        return {'ok': bool(ch.get('ok')), 'why': ch.get('why', ''), 'frames': [ch.get('frame_id', '')],
+                'measured': {k: ch.get(k) for k in ('column', 'facing_rad', 'bar_width', 'column_from')},
+                'checkpoint': {'subagent': 'haiku', 'frames': [f"runtime/frames/{ch.get('frame_id', '')}/head_camera.jpg"],
+                               'question': 'Is there an office chair with a mesh backrest in the image, and is the '
+                                           'floor between the robot and the chair free of people and objects?',
+                               'pass_if': 'chair visible, path free'}}
+    if step == 'approach':
+        ch = st['chair']
+        odom = C.status(ctx)['odometry']
+        col = C.from_odom(odom, C.to_odom(ch['odom'], ch['column']))
+        facing = ch['facing_rad'] + ch['odom']['yaw'] - odom['yaw']
+        pl = C.plan_approach({'column': col, 'facing_rad': facing})
+        log('  approach plan', pl)
+        if args and args[0] == 'plan':
+            return {'ok': True, 'measured': pl}
+        r = C.execute_moves(ctx, pl['moves'], log=log)
+        r['plan'] = pl
+        return r
+    if step == 'desk':
+        m = C.measure(ctx, log=log)
+        d = m['desk']
+        if not d.get('ok') or d.get('centre_y') is None:
+            return {'ok': False, 'why': f"desk front not measured: {d.get('why', d)}", 'frames': [m['frame']]}
+        bins = [b for b in d['bins'] if abs(b[1] - d['x_front_median']) < 0.06]
+        slope = float(np.polyfit([b[0] for b in bins], [b[1] for b in bins], 1)[0]) if len(bins) > 2 else 0.0
+        odom = C.status(ctx)['odometry']
+        st['desk'] = {'front_centre_odom': C.to_odom(odom, [d['x_front_median'], d['centre_y']]),
+                      'yaw_odom': odom['yaw'] - math.atan(slope), 'height': d['height'], 'frame': m['frame']}
+        st['desk_yaw'] = st['desk']['yaw_odom']
+        st['last'] = {k: m[k] for k in ('frame', 'profile', 'desk', 'chair_yaw')}
+        _save(st)
+        return {'ok': True, 'measured': st['desk'], 'frames': [m['frame']]}
+    if step == 'transport':
+        dk = st['desk']
+        odom = C.status(ctx)['odometry']
+        E = C.from_odom(odom, dk['front_centre_odom'])
+        yaw_rel = math.atan2(math.sin(dk['yaw_odom'] - odom['yaw']), math.cos(dk['yaw_odom'] - odom['yaw']))
+        pl = C.plan_transport(E, yaw_rel, pull_back=float(args[0]) if args else 0.30)
+        log('  transport plan', pl)
+        if args and args[-1] == 'plan':
+            return {'ok': True, 'measured': pl}
+        wb = C.wrist(C.status(ctx))
+        for kind, val in pl['moves']:
+            if kind == 'drive' and val < 0:
+                r = C.pull(ctx, -val, log=log)
+            elif kind == 'drive':
+                r = C.base_drive(ctx, val, step=0.15, speed=0.05, wrist_base=wb, log=log)
+            elif kind == 'turn':
+                r = C.base_turn(ctx, val, step=0.15, speed=0.1, wrist_base=wb, log=log)
+            else:
+                r = C.base_turn_to(ctx, dk['yaw_odom'], wrist_base=wb, log=log)
+            if not r['ok']:
+                return {'ok': False, 'why': r.get('why'), 'plan': pl}
+        fid = C.observe(ctx, head=(0.0, 0.55))
+        return {'ok': True, 'plan': pl, 'frames': [fid]}
     if step == 'release':
         return C.release(ctx, log=log)
     if step == 'verify':
