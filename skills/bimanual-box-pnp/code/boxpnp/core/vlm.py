@@ -16,7 +16,9 @@ Segmentation (`segment`, official Gemini format: box_2d + polygon mask + label, 
 docs recommend - 3-6 s): the docs say the mask polygon is [x, y], but Gemini 3.8 Flash returns it as [y, x]
 normalized to the FULL image, exactly like box_2d (measured 2026-10-09: read as [x, y] the black table-top mask
 came out transposed and gave a 0.80 m edge; read as [y, x] it outlined the top and gave 0.391 m, matching the
-point prompt's 0.394 m). Always draw a returned mask on the image once before trusting a new prompt."""
+point prompt's 0.394 m). Telling it explicitly "each point as [x, y], x first" does NOT change this (4/4 answers
+were [y, x]: all vertices inside box_2d only when read so). `segment` therefore picks the order per answer by
+containment in its own box_2d. Always draw a returned mask on the image once before trusting a new prompt."""
 import base64
 import json
 import time
@@ -197,7 +199,12 @@ def segment(ctx, frame, what, effort='minimal', log=None):
         box = [xb0 / 1000 * w + x0, yb0 / 1000 * h + y0, xb1 / 1000 * w + x0, yb1 / 1000 * h + y0]
         pp = []
         if poly.ndim == 2 and poly.shape[1] == 2 and len(poly) >= 3:
-            pp = np.c_[poly[:, 1] / 1000 * w + x0, poly[:, 0] / 1000 * h + y0].astype(np.int32)   # [y, x] order
+            # order by containment in its own box_2d: [y, x] in every answer measured, even when told [x, y]
+            def inside(cols, rows):
+                return float(np.mean((cols >= xb0 - 15) & (cols <= xb1 + 15) & (rows >= yb0 - 15) & (rows <= yb1 + 15)))
+            yx = inside(poly[:, 1], poly[:, 0]) >= inside(poly[:, 0], poly[:, 1])
+            cols, rows = (poly[:, 1], poly[:, 0]) if yx else (poly[:, 0], poly[:, 1])
+            pp = np.c_[cols / 1000 * w + x0, rows / 1000 * h + y0].astype(np.int32)
             cv2.fillPoly(mask, [pp], 1)
         masks.append({'label': m.get('label', ''), 'box_px': [round(v) for v in box],
                       'poly_px': pp.tolist() if len(pp) else []})
