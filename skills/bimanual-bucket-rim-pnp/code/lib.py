@@ -1,5 +1,5 @@
 """Library pieces this controller reuses from the skill library (bimanual-box-pnp, generic modules only):
-core/vlm.py (Gemini questions, points, masks with the [y, x] polygon fix), core/frames.py (saved-frame depth,
+core/vlm.py (Gemini questions, points, masks: a wrapper over the gemini skill's shared helper), core/frames.py (saved-frame depth,
 projection, pixel -> base point, ray / plane), core/runner.py (steps, checkpoints, resume, STOP file),
 core/footprint.py, core/geom.py, core/kin.py (pinocchio FK / IK on robot-model/)."""
 import importlib

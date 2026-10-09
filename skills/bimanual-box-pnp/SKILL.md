@@ -43,7 +43,7 @@ Module map (`code/boxpnp/`):
 | Module | What |
 |---|---|
 | `core/robot.py`, `kin.py`, `geom.py`, `world.py`, `frames.py`, `footprint.py` | tool wrappers and body constants; pinocchio FK / IK incl. the ball tool; base <-> odometry; objects in the odometry frame + grip data; frame loading, `pixel_point`, `ray_plane`; robot footprint for base checks |
-| `core/vlm.py` | Gemini: `point` (named points, flags, lists), `check` (yes / no + reason), `segment` (official box_2d + polygon masks), budget / latency log |
+| `core/vlm.py` | Gemini `point`, `check`, `segment`, `usage` on frame ids: a thin wrapper over the harness gemini skill's shared helper (`.agents/skills/gemini/scripts/vlm.py`, moved there 2026-10-09); change Gemini behaviour there |
 | `core/runner.py` | Step runner: checkpoints with briefs, resume, `status.json` heartbeat, STOP-file guard on motion tools |
 | `perception/locate.py`, `sensing.py`, `box.py`, `table.py` | Gemini-seeded box (`locate_box`) and table top (`locate_table_mask`, `table_near_edge` from the segmentation mask + depth); find / relocate / verify on table or floor / check held; depth-only detectors as fallback |
 | `motion/navigation.py` | turn-drive-turn plans, swept-footprint depth check per segment, `plan_stance_straight` (straight final leg, clearance to known surfaces), `look_around_torso` (torso yaw +-1.9 to see beside / behind before in-place turns), `check_surface_stance`, `final_table_approach`, `retreat` |
@@ -84,7 +84,7 @@ table_to_floor `stance_d` 0.60-0.62, `straight` 0.35, `face_blend` 0 (box-facing
 floor_to_table `carry_z` 1.17. Inside: BALL_Z 0.18 above the support, standoff 0.09, squeeze +4 mm, touch 4.5 N,
 touchdown 4 N, path stop 25 points, segment 0.30 m / 0.6 rad, table stance edge 0.385 m.
 
-Gemini (`core/vlm.py`): images downscaled to 640 px; `max_tokens` 16384 (reasoning shares it; 2048 truncated an
+Gemini (`core/vlm.py`, i.e. the gemini skill's helper): images downscaled to 640 px; `max_tokens` 16384 (reasoning shares it; 2048 truncated an
 answer); effort `low` for points / checks (median 5.9 s, 2.2-47 s), `minimal` for segmentation (3-6 s, the docs'
 recommendation); a full-size image once timed out and kept a $2.81 reservation. The mask edge repeats to
 ~1.5 cm (0.391 once, then 0.414-0.417 in 5 calls on the same frame; coarse 6-10-vertex polygons may sit ~2 cm
