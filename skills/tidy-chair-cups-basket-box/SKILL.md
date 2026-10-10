@@ -4,7 +4,7 @@ description: Task composition on the RB-Y1 - move the desk chair out and park it
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 uses: [office-chair-tuck, stack-cups, bimanual-bucket-rim-pnp, bimanual-box-pnp, oc-hand-reach]
 ---
 
@@ -53,6 +53,24 @@ check (`run.py sweep_check`) against fresh depth and the furniture you identifie
    (no pause while squatted) -> carry route planned and sweep-checked by the agent -> look at the cabinet yourself,
    pick the free top, measure its edge from pixel depth -> `approach_table` with `edge_x` -> `place` -> retreat.
 
+### Trial-2 rules (R2, 2026-10-10)
+
+- Wheel odometry drifts (~0.45 m and ~0.3 rad over 90 min of turns): never route by odometry outlines made long ago.
+  Before each base move, take a fresh frame, measure the furniture you will pass with pixel depth (desk edge ends,
+  cabinet corners, chair bar / casters), build the polygons in the CURRENT base frame and `sweep_check` them; plan
+  turn-drive-turn moves about the axle in closed form from those numbers (straight final legs; turns >= 0.6 m from
+  furniture). Split the check per leg to tell the held object's own depth points (~20) from real obstacles.
+- Hands: banana left / cups right when the banana lies on the left (operator). Carry with the torso at `ready`
+  ("why don't you stand up": the wrists come off their limits, objects clear the desk). Release over the bucket by
+  joint moves to the drop pose (`drop.drop_pose` + one IK solve + FK-sampled path), torso `mid` for the right hand,
+  `lowest` for the left.
+- Joint-space arm moves near a desk: sample the path with FK (fingertip height) or rise first - rby1_check does not
+  see desk objects (a sweep pushed a book, a tool case and the cups).
+- Box onto the cabinet next to the bucket: put the bucket at one END of the top (approach a short edge) and the box
+  at the other end from the OTHER short edge (box short side inward).
+- Home: go back to the start view (desk ~1.5 m ahead, the original heading offset), measured from the desk, not by
+  odometry.
+
 ## Code
 
 `code/run.py:main(ctx, step, **args)` -> `{ok, measured, why}`:
@@ -97,6 +115,14 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 5. Cabinet perception by depth clustering / extra Gemini masks merged two units and wasted calls (operator: "just
    look at it yourself"): read the image, query a few pixels for depth, decide.
 6. Box skill edge from the wrong (farther) cabinet when the held box hides the near top: pass `edge_x`.
+7. R2: optimal-control moves from far-from-natural postures stopped on wrist torque / limits three times (cups
+   pre-grasp, chair release, bucket drop) -> joint moves for big reorientations (oc-hand-reach failure mode 5).
+8. R2: the right arm's joint move from its side pose to a cup pre-grasp swept desk objects (operator "stop", "lift
+   first") -> stack-cups v3 rise-first + dip check; re-grasp by Cartesian moves only.
+9. R2: curved banana: a grasp on the chord between its ends put a finger on its edge (60 N backend stop) -> grasp at
+   the measured middle with the local tangent, descend in 1 cm steps with a 6 N stop.
+10. R2: chair `find` picked another chair, `find_cabinet` could not see the cabinet behind: locate by eye + pixel
+   depth and write the world entries / plan the route yourself.
 
 ## Evidence
 
@@ -104,8 +130,12 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 |---|---|---|---|---|---|
 | R1 | 2026-10-09 | compositional_manipulation | success (all 6 conditions) | no | step by step with the agent; operator hints: deeper grasp, firm grip, natural arms, stand up fast, base crash warning, "just grasp it", "look at it yourself" |
 | D1 | 2026-10-09 | same | success (drop pose only, free air, no release) | yes | `run.py drop` right hand target (0.62, -0.12, 0.92): 3 calls, 23 s, 2.3 mm |
+| R2 | 2026-10-10 | same | success (all 6 conditions) | no | trial 2 after an operator reset, step by step; operator: stop / lift first (desk sweep), banana left + cups right, stand up, ears fine, just try lift it, home |
 
 ![start](evidence/images/2026-10-09-start.jpg)
 ![chair parked, cups on the desk](evidence/images/2026-10-09-chair-parked-cups-on-desk.jpg)
 ![end: chair tucked](evidence/images/2026-10-09-end-chair-tucked.jpg)
 ![end: basket and box on the cabinet](evidence/images/2026-10-09-end-bucket-and-box-on-cabinet.jpg)
+![R2: cups (nested) and banana in the bucket](evidence/images/2026-10-10-R2-cups-banana-in-bucket.jpg)
+![R2 end: bucket and box on the cabinet](evidence/images/2026-10-10-R2-end-bucket-box-on-cabinet.jpg)
+![R2 end: chair tucked](evidence/images/2026-10-10-R2-end-chair-tucked.jpg)

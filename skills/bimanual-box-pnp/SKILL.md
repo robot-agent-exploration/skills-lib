@@ -4,7 +4,7 @@ description: Pick and place a closed cardboard box (~0.40 x 0.22 x 0.26 m, ~1.4 
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 2
+version: 3
 ---
 
 # Bimanual box pick-and-place (floor <-> table)
@@ -153,6 +153,14 @@ P2 without a false stop.
 10. The place step puts the box on the robot's axis: check the free top's lateral extent against the box before
    placing (P3: top 0.47 m wide, box 0.39 m; a 9 cm offset was corrected by a turn-drive-turn side step; the box
    ended flush with one edge +-1 cm).
+11. P4 (trial 2, 2026-10-10): the free part of a 0.8 x 0.56 top beside a bucket was only ~0.44 m along the edge the
+   robot first faced - the box (held long side across the robot, 0.38 m) would not fit there; it fitted from the
+   SHORT edge (0.23 m side inward). The held box hid the near edge and the drawer face: the edge came from top
+   points seen beside the box before the last side step plus the odometry of that step (0.99 - 0.25 = 0.74 m); with
+   `edge_x` the final drive must be <= 0.25 m (drive closer by hand first). `verify` raised KeyError 'table' when
+   find_table had been skipped -> it now falls back to the edge notes (top straight ahead). In the base path check
+   the held box itself adds ~20 "obstacle" points as soon as the swept base reaches its image position: tell them
+   from real obstacles by checking the legs separately and looking at the points.
 
 ## Evidence
 
@@ -161,6 +169,7 @@ P2 without a false stop.
 | P1 | 2026-10-08 | table_to_floor | success (agent finished the set-down) | no | box on the island, robot 0.55 m from it at a 0.47 rad skew |
 | P2 | 2026-10-09 | floor_to_table | success (agent fixed the edge measurement) | no | box on the floor 0.67 m ahead, island ~1 m ahead |
 | P3 | 2026-10-09 | floor_to_table | success (agent planned the carry route, measured the edge, side-stepped) | no | compositional session: box ~1.6 m beside the robot; grasp + lift chained without a pause (no time bent over); target = the free one of two dark-top drawer units (the other held a bucket), approached from its free side |
+| P4 | 2026-10-10 | floor_to_table | success (agent route around the cabinet, edge from pixel depth + odometry, skill verify crashed -> fixed) | no | compositional trial 2: box 1.5 m ahead on the floor, placed on the free end of the bucket's cabinet from its short edge |
 
 ![P1 box on the table](evidence/images/p1_01_box_on_table_find_box.jpg)
 ![P1 plan with a straight final leg](evidence/images/p1_02_plan_stance_straight_leg.jpg)
@@ -174,3 +183,4 @@ P2 without a false stop.
 ![P3 box on the floor](evidence/images/p3_01_box_on_floor_find.jpg)
 ![P3 lifted](evidence/images/p3_02_lifted.jpg)
 ![P3 placed on the free cabinet next to the bucket](evidence/images/p3_03_placed_on_free_cabinet.jpg)
+![P4 box placed next to the bucket (trial 2)](evidence/images/2026-10-10-compose2-box-next-to-bucket.jpg)

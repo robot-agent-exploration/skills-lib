@@ -61,11 +61,15 @@ def set_torso(ctx, goal, log=print):
     pos = TORSO_POS[goal]
     if np.allclose(C.status(ctx)['torso'], pos, atol=0.02):
         return True
-    chk = C.call(ctx, 'rby1_check', {'tool': 'rby1_move_joints', 'arguments': {'component': 'torso', 'preset': goal}})
-    if not chk.get('accepted'):
-        log(f'  torso {goal} refused: {chk.get("reason")}')
-        return False
-    ctx.value('rby1_move_joints', component='torso', preset=goal)
+    cur = np.array(C.status(ctx)['torso'])
+    n = max(1, int(math.ceil(float(np.max(np.abs(np.array(pos) - cur))) / 1.1)))   # <= 1.2 rad per call (zero -> mid 1.57)
+    for i in range(1, n + 1):
+        q = (cur + (np.array(pos) - cur) * i / n).round(4).tolist()
+        chk = C.call(ctx, 'rby1_check', {'tool': 'rby1_move_joints', 'arguments': {'component': 'torso', 'positions': q}})
+        if not chk.get('accepted'):
+            log(f'  torso {goal} refused: {chk.get("reason")}')
+            return False
+        ctx.value('rby1_move_joints', component='torso', positions=q)
     log(f'  torso -> {goal} loads {C.loads(C.status(ctx))}')
     return True
 
@@ -272,8 +276,10 @@ def nested_check(ctx, fid, target, log=print):
     k = (d < 0.06) & (P[:, 2] > target['rim_z'] - 0.05) & (P[:, 2] < target['rim_z'] + 0.12)
     rim = float(np.percentile(P[k, 2], 98)) if k.sum() > 50 else None
     depth_yes = rim is not None and abs(rim - (target['rim_z'] + NEST_RISE)) < 0.015
-    g = PP.check(ctx, fid, 'Is one silver cup nested inside another silver cup (one inside the other, upright, both '
-                           'rims together at the top), with no cup lying on its side?', log=log)
+    g = PP.check(ctx, fid, 'Look at the silver cup(s) under the robot gripper. Two nested cups look like ONE cup with '
+                           'TWO concentric rims at the top (the inner cup rim just inside / above the outer rim). Is '
+                           'that what you see - a cup inside another cup, upright - and not two separate cups or a cup '
+                           'lying on its side?', log=log)
     if g.get('ok') and g.get('yes') == depth_yes:
         return ('nested' if depth_yes else 'not nested'), rim
     return 'unsure', rim
@@ -299,7 +305,9 @@ def insert(ctx, side, target, pinch, log=print):
             break
     ctx.value('rby1_gripper', side=side, action='open')
     time.sleep(0.5)
-    r = M.move_arm(ctx, side, [ee[0], ee[1], z + 0.08], q, log=log)
+    # rise 15 cm (trial 2: after an 8 cm rise the open fingers were still in the depth window over the rim -> the
+    # nested check read 'not nested' for two nested cups)
+    r = M.move_arm(ctx, side, [ee[0], ee[1], z + 0.15], q, log=log)
     M.look_at(ctx, [target['centre'][0], target['centre'][1], target['rim_z']])
     fid = C.observe(ctx)
     nested, rim = nested_check(ctx, fid, target, log=log)

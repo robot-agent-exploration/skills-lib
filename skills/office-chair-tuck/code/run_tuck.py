@@ -96,8 +96,10 @@ def main(ctx, step, *args, log=C.log_default):
     if step == 'drive':
         return C.base_drive(ctx, float(args[0]), step=0.15, speed=0.05, log=log)
     if step == 'tuck':
-        desk_x = st['last']['desk'].get('x_front_median')
-        bar_x = st['last']['profile'].get('x_at_centre')
+        # optional agent-measured args (trial 2: holding the chair, `measure` would move the hands; the stored desk
+        # front was from another place): tuck <desk_front_x> [bar_x], both base frame, robot square to the desk
+        desk_x = float(args[0]) if args else st['last']['desk'].get('x_front_median')
+        bar_x = float(args[1]) if len(args) > 1 else st['last']['profile'].get('x_at_centre')
         if desk_x is None or bar_x is None:
             return {'ok': False, 'why': 'measure the desk and the bar first (robot square to the desk)'}
         dist = desk_x - bar_x - TUCK_GAP

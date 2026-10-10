@@ -397,7 +397,13 @@ def grasp_lift(rt):
     Fp, _ = wrist(rt)
     rows = []
     for t in (TORSO_LIFT1, TORSO_READY, TORSO_ZERO):
-        rt.v('rby1_move_joints', component='torso', positions=t)
+        try:
+            rt.v('rby1_move_joints', component='torso', positions=t)
+        except RuntimeError as e:      # trial 2 (2026-10-10): left_arm_5 150 % stop half way LIFT1 -> READY; holding
+            if '150%' not in str(e) and 'torque' not in str(e):    # still the load fell to 137 %, and re-sending the
+                raise                  # same target stood up fine (operator: "just try lift it"): loads 61 % at zero
+            rt.log(f'lift: torso move stopped ({str(e)[:160]}); re-sending the same target once')
+            rt.v('rby1_move_joints', component='torso', positions=t)
         s = rt.status()
         rows.append(loads(s))
         rt.log(f'torso {t}: loads {loads(s)}')

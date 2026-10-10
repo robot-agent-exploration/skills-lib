@@ -21,7 +21,10 @@ Contract
   the final orientation is not checked against tol_rad.
 - torso: None (hold: joint targets on torso_1/2/3/5 at the measured values, weight 10; the backend adds torso_0 =
   torso_4 = 0), a 6-vector to reach together with the hands (weight w_torso), or 'free' (no torso targets).
-- posture: 'natural' (NATURAL below; per-joint weights PRIOR scaled by w_posture / 0.2), None, or {side: 7-vector}.
+- posture: 'natural' (NATURAL below; per-joint weights PRIOR scaled by w_posture / 0.2), 'current' (the live joints
+  of each moving arm: no pull; use it when the arm starts far from NATURAL - trial 2, 2026-10-10: from `ready` or a
+  chair-grasp pose the natural prior moved several joints 0.5-0.9 rad in the FIRST waypoint and the backend
+  stopped it: left_arm_6 166 % / 168 %, right_arm_5 at its limit), None, or {side: 7-vector}.
 - path: split into waypoints within the per-call caps (<= step_m, <= step_rad per target; caps 0.25 m / 1.0 rad):
   linear position, slerp orientation. Each call is checked with rby1_check first.
 - end: the hands at the targets within tol_m (default 5 mm) or ok False with why and the measured poses.
@@ -157,7 +160,10 @@ def build_command(s, goal, torso=None, posture='natural', w_posture=0.2, w_torso
         for i in (1, 2, 3, 5):
             jt.append({'joint': f'torso_{i}', 'position': round(float(tv[i]), 4), 'weight': w_torso})
     if posture:
-        ref = NATURAL if posture == 'natural' else posture
+        if posture == 'current':      # anchor each moving arm at its live joints: no pull towards NATURAL
+            ref = {side: s[f'{side}_arm'] for side in goal}
+        else:
+            ref = NATURAL if posture == 'natural' else posture
         for side in goal:
             for j, w in PRIOR.items():
                 if len(jt) < 10:

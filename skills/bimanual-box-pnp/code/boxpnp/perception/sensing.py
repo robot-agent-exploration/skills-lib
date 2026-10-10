@@ -139,7 +139,12 @@ def find_surface(rt, name, describe=None, looks=None):
 def verify_on_surface(rt, name, surface, height=(0.21, 0.31)):
     """The box rests on the table: depth height of its top above the table top in range, centre inside the top,
     and Gemini confirms (resting, not held). -> {height_above_surface, center, inside, gemini, frame}"""
-    tb = rt.world.in_base(surface, rt.odom())
+    if surface in rt.world.objects:
+        tb = rt.world.in_base(surface, rt.odom())
+    else:                     # agent-measured edge (approach_table edge_x) without find_table: the top straight ahead
+        e = rt.world.notes.get(f'{surface}_edge_x', 0.39)    # (trial 2, 2026-10-10: verify raised KeyError here)
+        tb = {'center': [e + 0.25, 0.0], 'top_z': rt.world.notes.get(f'{surface}_top_z', 0.70),
+              'corners': [[e, -0.30], [e + 0.6, -0.30], [e + 0.6, 0.30], [e, 0.30]]}
     fid = rt.observe([tb['center'][0], tb['center'][1], tb['top_z'] + 0.1])
     t = ptable.find_table(fid, near=tb['center'], radius=1.0)
     table_z = t['top_z'] if t['ok'] else tb['top_z']

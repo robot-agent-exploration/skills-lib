@@ -4,7 +4,7 @@ description: Grasp a wheeled office chair by the top bar of its mesh backrest wi
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 3
+version: 4
 uses: [oc-hand-reach]
 ---
 
@@ -45,13 +45,19 @@ uses: [oc-hand-reach]
    (oc-hand-reach: torso held, elbow-down posture prior, <= 0.35 rad per call; no IK seed search), descent by two
    Cartesian translations (torso pinned), close left 0.4 A then right 0.4 A; a wrist joint over 85 % -> open
    that side to 4 cm and re-close (0.25 A in the step; while turning with the chair re-close FIRM at 0.4 A:
-   `chair_moves.turn_to_relieved`).
+   `chair_moves.turn_to_relieved`). v4: a hot WRIST ROLL (arm_6) after both closed -> `relieve_wrist_roll`: open
+   that side to 4 cm, roll its joint 6 by 0.11 rad in the direction the grip pushed it, re-close 0.4 A, undo and try
+   the other direction once if the load did not drop (trial 2: left_arm_6 108-113 % -> 35-45 % twice). The two-hand
+   pre-grasp settles 3-7 mm off (accepted up to 12 mm); the descent goes to ABSOLUTE grasp targets.
 4. Move the chair with the base only: `pull` (right hand caged at 4.5 cm, left grips), `turn_to` absolute odometry
    yaw (0.15 rad steps land ~5 % short, so it re-measures and corrects), `drive`, lane changes. Every step checks
    loads (stop > 110 %) and wrist force change (stop > 55 N).
-5. `tuck`: push by desk_front_x - bar_x - 0.42 m (0.10 m steps, the last 0.10 m in 3 cm steps, stop on a wrist
-   force rise of 30 N).
-6. `release`: open, back out 0.10 m along f and 4 cm up, hands up. 7. `verify`: gap, centring, yaw + checkpoint.
+5. `tuck [desk_front_x bar_x]`: push by desk_front_x - bar_x - 0.42 m (0.10 m steps, the last 0.10 m in 3 cm
+   steps, stop on a wrist force rise of 30 N). v4: while holding the chair, measure the desk front yourself (pixel
+   depth of its front edge, robot square to it) and pass both values - the stored ones come from the last `measure`,
+   which may have been at another place.
+6. `release`: open, back out 0.10 m along f and 4 cm up, arms to ready by split joint moves (v4; the optimal-control
+   hands_up from here tripped left_arm_6 at 168 %). 7. `verify`: gap, centring, yaw + checkpoint.
 
 ## Code
 `code/run.py:main(ctx, step, args)` -> `run_tuck.main` (state in `output/push_chair_state.json`); steps: find,
@@ -110,6 +116,14 @@ edge with the armrests just under the edge). Every base command retries once on 
   (0.40, ±0.30, 1.30) needs the wrist at its stop: hands_up / measure poses use a loose orientation (w_rot 0.3).
 - Base turns near furniture: an unrelated 151° turn swung the base's rear into a cabinet; check the swept footprint
   (rear r 0.63 m about the axle, plus the held chair) against the furniture before every turn.
+- v4 (trial 2, 2026-10-10): the two-hand optimal-control pre-grasp settled 5.5 / 6.5 mm off (tolerance 5 mm ->
+  RuntimeError) -> 12 mm accepted, absolute descent. Closing the second gripper put left_arm_6 at 108-113 % (twice);
+  the old relief re-closed the side just closed (the right) -> `relieve_wrist_roll` on the hot side. The release's
+  optimal-control hands_up stopped at left_arm_6 168 % -> joint moves. `find` returned another chair (bar width
+  0.049 m) -> locate the chair yourself by pixel depth of its backrest bar and casters, plan the move behind it,
+  then `measure`. Wheel odometry drifted ~0.45 m over the session: plan every route from fresh frames (polygons
+  of desk / cabinet / chair from pixel depth at the current pose), not from old odometry outlines. The desk's
+  front-edge angle from a far left-end view was 0.3 rad off: re-measure it from 1.3-1.9 m before the final tuck.
 
 ## Evidence
 | date | session | run | outcome | unattended | conditions |
@@ -120,6 +134,8 @@ edge with the armrests just under the edge). Every base command retries once on 
 | 2026-10-09 | compositional_manipulation | C1 controller steps | parked left of the desk facing the wall | no | chair lost once in a turn (soft grips), recovered; v3 fixes from it |
 | 2026-10-09 | compositional_manipulation | C2 controller steps | tucked, centred, square | no | after a box/cup task; grasp #1 fingers under the bar (torso ready), #2 closed at the stopped pose |
 | 2026-10-09 | compositional_manipulation | O1 free-air test of the v3 arm moves | pre-grasp 0.3 mm, hands_up 1.7 mm | yes | synthetic bar 0.62 m ahead, no chair; see oc-hand-reach evidence |
+| 2026-10-10 | compositional_manipulation | C3 trial 2 steps (park) | parked left of the desk near the wall | no | v4 fixes made during this run (pre-grasp tolerance, wrist-roll relief by hand, joint release) |
+| 2026-10-10 | compositional_manipulation | C4 trial 2 steps (tuck) | tucked, square, centred within 2.5 cm | no | chair located by the agent (find picked another chair); routes from fresh frames; tuck with agent desk / bar values |
 
 ![start](evidence/images/2026-10-09-M1-start.jpg)
 ![grasp](evidence/images/2026-10-09-M1-two-hand-grasp.jpg)
@@ -127,3 +143,5 @@ edge with the armrests just under the edge). Every base command retries once on 
 ![tucked](evidence/images/2026-10-09-P2-end-tucked.jpg)
 ![parked (compositional C1)](evidence/images/2026-10-09-compose-parked-left.jpg)
 ![tucked (compositional C2)](evidence/images/2026-10-09-compose-tucked.jpg)
+![parked (trial 2)](evidence/images/2026-10-10-compose2-parked-left.jpg)
+![tucked (trial 2)](evidence/images/2026-10-10-compose2-tucked.jpg)
