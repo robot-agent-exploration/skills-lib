@@ -24,6 +24,9 @@ TORSO_ZERO = [0.0] * 6
 PITCH = math.radians(-45)
 FINGER = 0.20            # open fingertips' middle along ee -z (robot-interface "Custom fingers")
 HAND_HALF = 0.10         # hands at bar centre ± this along the bar (tested 0.10)
+GRASP_DEEPER = 0.04      # v3: the ee goes this much further along the fingers than 'tips' middle on the bar centre':
+                         # at 0 the fingers bit only the bar's top edge (9-13 mm, operator: "missed", "be deeper");
+                         # 0.04 deeper closed around the whole bar (26 / 35 mm), 2026-10-09 compositional session
 PRE_BACK, PRE_UP = 0.10, 0.04
 GRIP_A, GRIP_SOFT_A = 0.4, 0.25
 RELIEVE_PCT = 85         # a wrist joint above this after closing -> relieve and re-close softly
@@ -136,7 +139,7 @@ def bar_grasp_targets(prof, half=HAND_HALF, finger=FINGER):
         quat, R = quat_pitch_yaw(yaw)
         f = R @ np.array([0, 0, -1.0])
         bar_c = np.array([x_surf + 0.015, y, prof['z_top'] - 0.015])
-        grasp = bar_c - finger * f
+        grasp = bar_c - (finger - GRASP_DEEPER) * f
         pre = grasp - PRE_BACK * f + np.array([0, 0, PRE_UP])
         out[side] = {'bar': bar_c.round(4).tolist(), 'yaw_deg': round(math.degrees(yaw), 1), 'quat': quat,
                      'pre': pre.round(4).tolist(), 'grasp': grasp.round(4).tolist(), 'f': f.round(4).tolist()}
@@ -144,15 +147,37 @@ def bar_grasp_targets(prof, half=HAND_HALF, finger=FINGER):
 
 
 # ---------- arm motions ----------
+READY_ARM = {'right': [-0.7854, -0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0],
+             'left': [-0.7854, 0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0]}
+
+
+def _mirror(arm):
+    """The other arm's joints mirrored through the robot's xz plane (left <-> right)."""
+    a = np.array(arm, float)
+    return a * np.array([1, -1, -1, 1, -1, 1, -1])
+
+
 def arm_ik(ctx, targets, torso=TORSO_ZERO):
-    """targets {side: (pos, quat)} -> {side: joints} solved locally from the current joints; raises if not exact."""
+    """targets {side: (pos, quat)} -> {side: joints} solved locally; raises if not exact.
+    Seeds: the current joints, then the other arm mirrored, then `ready` (v3: from the wide `measure` pose the
+    current seed got stuck at 0.29 m for the left pre-grasp; the mirrored right arm solved it exactly)."""
     s = status(ctx)
     sol = {}
     for side, (pos, quat) in targets.items():
-        a, ep, er = kin.ik(side, torso, np.array(s[f'{side}_arm']), pos, quat)
-        if ep > 0.002 or er > 0.01:
-            raise RuntimeError(f'IK {side} {pos}: pos err {ep:.4f} rot err {er:.4f}')
-        sol[side] = [round(float(v), 4) for v in a]
+        other = 'left' if side == 'right' else 'right'
+        cur = np.array(s[f'{side}_arm'])
+        best = None
+        for seed in (cur, _mirror(s[f'{other}_arm']), np.array(READY_ARM[side])):
+            a, ep, er = kin.ik(side, torso, seed, pos, quat)
+            if ep <= 0.002 and er <= 0.01:
+                dist = float(np.abs(a - cur).max())
+                if best is None or dist < best[0]:
+                    best = (dist, a)
+                if seed is cur:
+                    break
+        if best is None:
+            raise RuntimeError(f'IK {side} {pos}: pos err {ep:.4f} rot err {er:.4f} (all seeds)')
+        sol[side] = [round(float(v), 4) for v in best[1]]
     return sol
 
 
@@ -194,9 +219,19 @@ def hands_up(ctx, log=log_default):
     return move_arms_joint(ctx, {k: (list(v), q0) for k, v in UP_POSE.items()}, log=log)
 
 
+def ensure_torso_zero(ctx, log=log_default):
+    """The arm IK and the pinned-torso Cartesian moves assume torso ZERO. v3: a grasp started at torso `ready` put
+    the pre-grasp 9 cm low and the descent (torso pinned to 0) drove the fingers under the bar (2026-10-09)."""
+    s = status(ctx)
+    if max(abs(v) for v in s['torso']) > 0.01:
+        log(f"  torso {s['torso']} -> zero (precondition)")
+        ctx.value('rby1_move_joints', component='torso', preset='zero')
+
+
 def grasp_bar(ctx, prof, log=log_default):
     """Two-hand grasp of the backrest bar from a fresh bar profile. Starts with hands up/clear and grippers free.
     -> {ok, widths, loads, targets}"""
+    ensure_torso_zero(ctx, log=log)
     T = bar_grasp_targets(prof)
     log('  grasp targets', {k: (v['yaw_deg'], v['grasp']) for k, v in T.items()})
     for side in ('right', 'left'):
@@ -370,6 +405,7 @@ def lane_change(ctx, lateral, angle=0.61, wrist_base=None, log=log_default):
 def measure(ctx, log=log_default):
     """Hands wide (out of the camera's view of the bar), look at the chair; bar profile + desk front + chair yaw."""
     import perception as P
+    ensure_torso_zero(ctx, log=log)
     q0, _ = quat_pitch_yaw(0.0)
     move_arms_joint(ctx, {'left': ([0.36, 0.46, 1.32], q0), 'right': ([0.36, -0.42, 1.32], q0)}, log=log)
     fid = observe(ctx, head=(0.0, 0.66))
