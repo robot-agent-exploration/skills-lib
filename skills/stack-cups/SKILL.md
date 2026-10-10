@@ -108,7 +108,7 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 |---|---|---|---|---|---|
 | 2026-10-09 | push_chair_4ab505 | C1 manual | nested | no | silver cups 0.24 m apart; primitives run by hand, operator: rim pinch, not high enough |
 | 2026-10-09 | push_chair_4ab505 | C2 controller | nested | no | `pick` -> `align` (stood up to ready, 1 correction 2.5 -> 0.5 cm) -> agent checkpoint (yes) -> `insert` (contact 18 N) |
-| 2026-10-09 | push_chair_4ab505 | offline perception | see runs.jsonl | yes | recorded frames: localization, alignment, held, nested checks |
+| 2026-10-09 | push_chair_4ab505 | offline perception (final code) | 8/10 single checks (failure); 0 wrong automatic decisions with the depth AND Gemini gates | yes | recorded frames: locate 2/2, align depth 2/3, Gemini 2/3, held 3/3, nested 1/2 |
 
 ![start](evidence/images/2026-10-09-C2-start.jpg)
 ![alignment checkpoint](evidence/images/2026-10-09-C2-align-checkpoint.jpg)
