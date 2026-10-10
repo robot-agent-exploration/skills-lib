@@ -121,7 +121,8 @@ def find_bucket(rt, looks=((1.0, 0.0, 0.1), (1.0, 0.45, 0.1), (1.0, -0.45, 0.1))
     raise StepFailed('bucket not found in the looks')
 
 
-CAB_DESC = 'the black top surface of the white drawer cabinet that has a cardboard box standing on it'
+CAB_DESC = ('the black top surface of the white drawer cabinet nearest to the robot (a cardboard box may or may not '
+            'stand on it)')   # v2: the top may be empty (compositional task, 2026-10-09)
 
 
 def find_cabinet(rt, looks=((1.3, 0.0, 0.6), (1.3, 0.5, 0.6), (1.3, -0.5, 0.6))):

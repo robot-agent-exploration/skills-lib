@@ -4,7 +4,7 @@ description: Pick and place a closed cardboard box (~0.40 x 0.22 x 0.26 m, ~1.4 
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 ---
 
 # Bimanual box pick-and-place (floor <-> table)
@@ -57,6 +57,10 @@ Module map (`code/boxpnp/`):
 check) -> check_stance (cp) -> grasp from the table (cp: hands above the ends, down beside them, touch, squeeze,
 lift 8 cm) -> retract (box onto the base x axis, hands to x 0.375) -> back_off (reverse the straight leg) ->
 set_down (cp) -> verify_floor (depth top height + Gemini).
+
+Run grasp and lift as ONE chain (`--start grasp --stop-after lift --no-checkpoints`): the grasp checkpoint would
+otherwise hold the robot squatted while you look; the code's touch / squeeze / lift force checks gate the chain
+(P3: touch 8.5 / 11.8 N, squeeze 19 / 21 N, lift loads < 40 %). Look at the lift frame afterwards.
 
 `floor_to_table`: prepare -> find_box (cp) -> plan_approach -> drive_approach -> check_stance (loops) -> grasp from
 the floor (cp: squat to lowest, touch, squeeze) -> lift (cp: torso up with arms fixed, hands to ee z 0.92, torso
@@ -141,6 +145,14 @@ P2 without a false stop.
 7. A cancelled `request_operator` kept blocking the host's call queue until its timeout: don't cancel it.
 8. From v1: partial box view -> wrong pose -> crash A2 (now Gemini full-visibility + size gates); base backend
    error stops the run (no retry).
+9. Two dark-top cabinets in view and the held box hiding the near top (P3): the mask edge read 1.053 m (the farther
+   cabinet) for a top 0.45 m ahead; the per-segment path check blocked the drive (4222 points), correctly. Now
+   `approach_table` takes `edge_x` from the agent: look at the image yourself, query the drawer-face / edge
+   pixels below the box with `rby1_pixel_to_position` (face 0.47 m -> edge ~0.45), pass
+   `--start approach_table --params '{"edge_x": 0.45}'`.
+10. The place step puts the box on the robot's axis: check the free top's lateral extent against the box before
+   placing (P3: top 0.47 m wide, box 0.39 m; a 9 cm offset was corrected by a turn-drive-turn side step; the box
+   ended flush with one edge +-1 cm).
 
 ## Evidence
 
@@ -148,6 +160,7 @@ P2 without a false stop.
 |---|---|---|---|---|---|
 | P1 | 2026-10-08 | table_to_floor | success (agent finished the set-down) | no | box on the island, robot 0.55 m from it at a 0.47 rad skew |
 | P2 | 2026-10-09 | floor_to_table | success (agent fixed the edge measurement) | no | box on the floor 0.67 m ahead, island ~1 m ahead |
+| P3 | 2026-10-09 | floor_to_table | success (agent planned the carry route, measured the edge, side-stepped) | no | compositional session: box ~1.6 m beside the robot; grasp + lift chained without a pause (no time bent over); target = the free one of two dark-top drawer units (the other held a bucket), approached from its free side |
 
 ![P1 box on the table](evidence/images/p1_01_box_on_table_find_box.jpg)
 ![P1 plan with a straight final leg](evidence/images/p1_02_plan_stance_straight_leg.jpg)
@@ -158,3 +171,6 @@ P2 without a false stop.
 ![P2 Gemini table mask (good view top, rejected view bottom)](evidence/images/p2_04_gemini_table_mask_good_and_bad_view.jpg)
 ![P2 placed](evidence/images/p2_05_placed_on_table.jpg)
 ![Perception comparison: Gemini green, haiku magenta, depth red](evidence/images/perception_gemini_vs_haiku_vs_depth.jpg)
+![P3 box on the floor](evidence/images/p3_01_box_on_floor_find.jpg)
+![P3 lifted](evidence/images/p3_02_lifted.jpg)
+![P3 placed on the free cabinet next to the bucket](evidence/images/p3_03_placed_on_free_cabinet.jpg)

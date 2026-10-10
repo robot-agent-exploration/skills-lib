@@ -4,7 +4,8 @@ description: Grasp a wheeled office chair by the top bar of its mesh backrest wi
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 2
+version: 3
+uses: [oc-hand-reach]
 ---
 
 # Office chair: grasp the backrest and tuck / park the chair
@@ -37,10 +38,14 @@ version: 2
    edge from light-wood colour at z 0.70-0.80.
 2. `square`: turn the base by the chair yaw (if > 0.06 rad), lane change (back, turn ±35°, drive, turn back to the
    stored odometry yaw) to centre the bar.
-3. `grasp`: hands at bar centre ±0.10 m; each gripper yawed to the local bar tangent (yaw = -atan(dx/dy)),
-   pitched -45°; ee = bar centre - 0.20·f (f = finger direction); pre-grasp 0.10 back along f and 4 cm up. Pre-grasp
-   by JOINT moves (local IK, `rby1_check`ed), descent by two Cartesian translations (torso pinned), close left
-   0.4 A then right 0.4 A; a wrist joint over 85 % -> open that side to 4 cm and re-close at 0.25 A.
+3. `grasp` (torso forced to ZERO first: `ensure_torso_zero`): hands at bar centre ±0.10 m; each gripper yawed to
+   the local bar tangent (yaw = -atan(dx/dy)), pitched -45°; ee = bar centre - (0.20 - GRASP_DEEPER 0.04)·f
+   (f = finger direction; v3: 0.04 deeper so the fingers close around the whole bar, not its top edge); pre-grasp
+   0.10 back along f and 4 cm up. v3: pre-grasp of BOTH hands in one whole-body optimal-control problem
+   (oc-hand-reach: torso held, elbow-down posture prior, <= 0.35 rad per call; no IK seed search), descent by two
+   Cartesian translations (torso pinned), close left 0.4 A then right 0.4 A; a wrist joint over 85 % -> open
+   that side to 4 cm and re-close (0.25 A in the step; while turning with the chair re-close FIRM at 0.4 A:
+   `chair_moves.turn_to_relieved`).
 4. Move the chair with the base only: `pull` (right hand caged at 4.5 cm, left grips), `turn_to` absolute odometry
    yaw (0.15 rad steps land ~5 % short, so it re-measures and corrects), `drive`, lane changes. Every step checks
    loads (stop > 110 %) and wrist force change (stop > 55 N).
@@ -53,7 +58,10 @@ version: 2
 approach [plan], desk, measure, square, grasp, transport [pull_back] [plan], pull, turn_to, drive, tuck, release,
 verify. `find`/`approach`/`desk`/`transport` (v2) are planned with the axle model (turns pivot about the drive
 axle at +0.228 m) and still need their first end-to-end test. Modules:
-`chair_ctl.py` (primitives: `bar_profile`, `bar_grasp_targets`, `grasp_bar`, `release`, `hands_up`,
+`chair_moves.py` (v3: `turn_to_relieved(ctx, yaw)` = absolute odometry turn holding the chair in 0.15 rad steps,
+relieving a wrist joint > 90 % (open to 4 cm, re-close at 0.4 A) and checking `lost_grip` (an opening < 12 mm =
+closed on air) after every step), `chair_ctl.py` (primitives: `bar_profile`, `bar_grasp_targets`, `grasp_bar`,
+`ensure_torso_zero`, `move_arms_joint` (= oc-hand-reach move of one or both hands; name kept), `release`, `hands_up`,
 `base_drive`, `base_turn`, `base_turn_to`, `pull`, `push`, `lane_change`, `measure`, `chair_yaw`), `perception.py`
 (`desk_front`, Gemini `chair_pose` / `desk_edge` for coarse localization from afar), `geom.py` (depth -> base frame),
 `kin.py` (pinocchio IK). Parameters (tested values): `HAND_HALF` 0.10, `FINGER` 0.20, `PITCH` -45°, `GRIP_A` 0.4,
@@ -89,6 +97,19 @@ edge with the armrests just under the edge). Every base command retries once on 
 - Casters / armrests caught on the desk's leg while parking beside the desk (operator stop): keep ≥0.15 m
   lateral clearance from desk legs; lane change sideways.
 - Transient SDK "This stream is expired" on base moves: one retry each (handled).
+- v3 (compositional session, 2026-10-09): the chair slipped out of two 0.25 A grips during a 90° turn and the turn
+  loop kept turning (operator: "you lost the chair") -> firm 0.4 A re-closes and `lost_grip` checks every step.
+- Fingers bit only the bar's top edge (widths 9-13 mm, operator: "missed again", "be deeper") -> GRASP_DEEPER 0.04
+  (then 26-35 mm, whole bar). A bar centre taken from the flat top was biased to one end: centre on the full
+  visible span.
+- Grasp started at torso `ready`: pre-grasp 9 cm low, the pinned-torso descent drove the fingers under the bar ->
+  `ensure_torso_zero` at the start of `grasp` and `measure`.
+- v3's local IK with 3 seeds (current, mirrored other arm, ready) once returned a flipped-shoulder solution (joint1
+  -3.1); the Cartesian descent from there timed out 1 cm short (closed there by hand: 28.5 mm, ok) -> pre-grasp and
+  hands-up now by the controller's optimal control (oc-hand-reach), no seed search. hands_up's exact -45° pitch at
+  (0.40, ±0.30, 1.30) needs the wrist at its stop: hands_up / measure poses use a loose orientation (w_rot 0.3).
+- Base turns near furniture: an unrelated 151° turn swung the base's rear into a cabinet; check the swept footprint
+  (rear r 0.63 m about the axle, plus the held chair) against the furniture before every turn.
 
 ## Evidence
 | date | session | run | outcome | unattended | conditions |
@@ -96,8 +117,13 @@ edge with the armrests just under the edge). Every base command retries once on 
 | 2026-10-09 | push_chair_4ab505 | M1 manual | tucked | no | chair at the desk's left end facing away; many operator hints |
 | 2026-10-09 | push_chair_4ab505 | P1 controller steps | parked left of the desk against the wall | no | 1 operator stop (casters vs desk leg) |
 | 2026-10-09 | push_chair_4ab505 | P2 controller steps | tucked, square, centred, gap 0.419 m | no | from the parked, 20° yawed chair; steps chained by the agent |
+| 2026-10-09 | compositional_manipulation | C1 controller steps | parked left of the desk facing the wall | no | chair lost once in a turn (soft grips), recovered; v3 fixes from it |
+| 2026-10-09 | compositional_manipulation | C2 controller steps | tucked, centred, square | no | after a box/cup task; grasp #1 fingers under the bar (torso ready), #2 closed at the stopped pose |
+| 2026-10-09 | compositional_manipulation | O1 free-air test of the v3 arm moves | pre-grasp 0.3 mm, hands_up 1.7 mm | yes | synthetic bar 0.62 m ahead, no chair; see oc-hand-reach evidence |
 
 ![start](evidence/images/2026-10-09-M1-start.jpg)
 ![grasp](evidence/images/2026-10-09-M1-two-hand-grasp.jpg)
 ![parked](evidence/images/2026-10-09-P1-end-parked-left.jpg)
 ![tucked](evidence/images/2026-10-09-P2-end-tucked.jpg)
+![parked (compositional C1)](evidence/images/2026-10-09-compose-parked-left.jpg)
+![tucked (compositional C2)](evidence/images/2026-10-09-compose-tucked.jpg)

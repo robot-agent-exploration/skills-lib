@@ -31,6 +31,21 @@ DESK_EDGE = 0.215         # desk front edge ahead of the base origin for reachin
 SIGN = {'left': 1.0, 'right': -1.0}
 
 
+def look_at(ctx, point, max_pan=0.44):
+    """rby1_look_at that degrades gracefully: a point beyond the head's pan range (+-0.47 rad) is replaced by the
+    point at the same range and height on the nearest reachable bearing (2026-10-09: a cup at y 0.38, x 0.39 was
+    44 deg off-axis and the refusal aborted an alignment)."""
+    try:
+        return ctx.value('rby1_look_at', point=[float(v) for v in point])
+    except RuntimeError as e:
+        if 'cannot point' not in str(e):
+            raise
+        x, y, z = [float(v) for v in point]
+        r, b = math.hypot(x, y), math.atan2(y, x)
+        b = max(-max_pan, min(max_pan, b))
+        return ctx.value('rby1_look_at', point=[r * math.cos(b), r * math.sin(b), z])
+
+
 def _res(ok, why='', **kw):
     return dict({'ok': ok, 'why': why, 'measured': {}, 'frames': []}, **kw)
 
@@ -129,7 +144,7 @@ def pick(ctx, name, kind, side, look=None, stow=True, log=print):
     End (ok): the object held at CARRY[side]. End (fail): hand above the object, open, nothing held."""
     frames = []
     if look:
-        ctx.value('rby1_look_at', point=list(look))
+        look_at(ctx, list(look))
     fid = C.observe(ctx)
     frames.append(fid)
     loc = PP.localize(ctx, fid, {name: kind}, log=log)
@@ -185,7 +200,7 @@ def pick(ctx, name, kind, side, look=None, stow=True, log=print):
     ee = C.status(ctx)[f'{side}_ee']['position']
     cart(ctx, side, [ee[0], ee[1], max(ee[2], CARRY[side][2])], speed=0.04, log=log)
     r = cart(ctx, side, CARRY[side], speed=0.04, log=log)
-    ctx.value('rby1_look_at', point=[CARRY[side][0] + 0.1, CARRY[side][1], CARRY[side][2] - 0.25])
+    look_at(ctx, [CARRY[side][0] + 0.1, CARRY[side][1], CARRY[side][2] - 0.25])
     frames.append(C.observe(ctx))                       # the held object hanging at the carry pose: checkpoint
     out = _res(r['ok'], r['why'], frames=frames,
                measured={'plan': {k: plan[k] for k in ('kind', 'yaw', 'grasp', 'pre')}, 'width': width,
@@ -250,7 +265,7 @@ def approach_desk(ctx, edge=DESK_EDGE, max_drive=1.0, log=print):
     """Drive straight until the desk front edge is `edge` ahead (2 legs, re-measured; never closer)."""
     frames = []
     for leg in range(2):
-        ctx.value('rby1_look_at', point=[0.9, 0.0, 0.7])
+        look_at(ctx, [0.9, 0.0, 0.7])
         fid = C.observe(ctx)
         frames.append(fid)
         d = pp_vis.desk_front(fid)
@@ -269,7 +284,7 @@ def approach_desk(ctx, edge=DESK_EDGE, max_drive=1.0, log=print):
 
 
 def find_bucket(ctx, look=(1.2, 0.0, 0.2), name='orange bucket', log=print):
-    ctx.value('rby1_look_at', point=list(look))
+    look_at(ctx, list(look))
     fid = C.observe(ctx)
     loc = PP.localize(ctx, fid, {name: 'round'}, log=log)
     b = loc['objects'][name]
@@ -333,7 +348,7 @@ def drop_gently(ctx, sides, bucket_xy, confirm=None, drop_z=DROP_Z, log=print):
     ctx.value('rby1_move_joints', component='torso', preset='mid')
     if not r['ok']:
         return _res(False, f'release pose: {r["why"]}', frames=frames)
-    ctx.value('rby1_look_at', point=[bx, by, 0.2])
+    look_at(ctx, [bx, by, 0.2])
     frames.append(C.observe(ctx))
     out = _res(True, frames=frames, measured={'bucket': [bx, by]})
     out['checkpoint'] = {

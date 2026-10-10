@@ -68,7 +68,7 @@ def set_torso(ctx, goal, log=print):
 def locate(ctx, names, look=None, log=print):
     """Fresh frame -> {name: cup description} (PP.cup) for every name."""
     if look:
-        ctx.value('rby1_look_at', point=list(look))
+        M.look_at(ctx, list(look))
     fid = C.observe(ctx)
     cups = {n: PP.cup(ctx, fid, n, log=log) for n in names}
     bad = [n for n, c in cups.items() if not c.get('ok')]
@@ -217,7 +217,7 @@ def align_over(ctx, side, target, pinch, nudge=None, log=print):
             r = M.move_arm(ctx, side, [float(xy[0]), float(xy[1]), z_safe], q, log=log)   # stood up a bit
         if not r['ok']:
             return _res(False, f'over target: {r["why"]}', frames=frames)
-        ctx.value('rby1_look_at', point=[float(T[0]), float(T[1]), target['rim_z']])
+        M.look_at(ctx, [float(T[0]), float(T[1]), target['rim_z']])
         fid = C.observe(ctx)
         frames.append(fid)
         b, low = held_bottom(ctx, fid, target['rim_z'], log=log)
@@ -292,7 +292,7 @@ def insert(ctx, side, target, pinch, log=print):
     ctx.value('rby1_gripper', side=side, action='open')
     time.sleep(0.5)
     r = M.move_arm(ctx, side, [ee[0], ee[1], z + 0.08], q, log=log)
-    ctx.value('rby1_look_at', point=[target['centre'][0], target['centre'][1], target['rim_z']])
+    M.look_at(ctx, [target['centre'][0], target['centre'][1], target['rim_z']])
     fid = C.observe(ctx)
     nested, rim = nested_check(ctx, fid, target, log=log)
     ok = r['ok'] and (True if nested == 'nested' else None if nested == 'unsure' else False)
