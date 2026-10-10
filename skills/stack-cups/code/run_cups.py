@@ -45,7 +45,9 @@ def save_state(s):
 
 
 def scan(ctx, names=None, log=print):
-    """Locate the cups (hands moved out of the view first) and report which hand reaches each fingers-down."""
+    """Locate the cups (hands moved out of the view first) and report, per hand, the rim point (deg) it would pinch
+    fingers-down (v2 closed form: facing that shoulder; None = beyond the arm's 0.69 m reach). Whether the arm gets
+    there is decided by the controller at pick time (a refused / unreached optimal-control move)."""
     names = names or CUPS
     st = load_state()
     M.clear_view(ctx, held=[s for s, v in st['held'].items() if v], log=log)
@@ -56,7 +58,8 @@ def scan(ctx, names=None, log=print):
     for n, c in loc['measured']['cups'].items():
         if c.get('ok'):
             hands[n] = {side: (lambda p: p['rim_angle'] if p['ok'] else None)(
-                G.plan_rim(dict(c, rim_in=K.CUP_RIM_IN), side, s['torso'], j, pitches=(0,))) for side in ('left', 'right')}
+                G.plan_rim(dict(c, rim_in=K.CUP_RIM_IN), side, s['torso'], j, pitches=(0,),
+                           cur_quat=s[f'{side}_ee']['quaternion'])) for side in ('left', 'right')}
     st['scan'] = {'frame': loc['frames'][0], 'cups': loc['measured']['cups']}
     save_state(st)
     return {'ok': loc['ok'], 'why': loc['why'], 'frames': loc['frames'],

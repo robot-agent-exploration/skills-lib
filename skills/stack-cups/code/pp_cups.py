@@ -7,13 +7,17 @@ Every primitive returns {ok, why, measured, frames} and, at the decisive points,
 bottom will go is perceived, not assumed.
 
   locate(ctx, names, look)            fresh frame; per cup: Gemini rim-lip points ray-cast at the depth rim height
-  pick_cup(ctx, name, side, look)     fingers-down rim pinch (nearest reachable rim point), lift 6 cm, held check
-                                      (never releases on doubt), raise to the carry height with joint moves
+  pick_cup(ctx, name, side, look)     fingers-down rim pinch (closed form: the rim point facing the hand's shoulder),
+                                      lift 6 cm, held check (never releases on doubt), raise to the carry height
   align_over(ctx, side, target, pinch) hand over the target so the held cup's bottom is above its opening (pinch
                                       geometry, then closed-loop depth correction); stands up to 'ready' when the
-                                      carry pose needs it; returns the alignment checkpoint
+                                      carry pose is not reached at 'mid'; returns the alignment checkpoint
   insert(ctx, side, target, pinch)    lower until the cups wedge / the outer finger meets the rim (wrist force) or
                                       the nest depth, release, rise; returns the nesting checkpoint
+
+v2 (2026-10-09, compositional session): hand moves (pre-grasp, lift, raise, transfer, rise) are M.move_arm = the
+controller's optimal control (oc-hand-reach), grasp planning is closed form (G.plan_rim): no IK seed / angle search.
+Not yet re-run on the robot with this change.
 """
 import math
 import time
@@ -52,7 +56,8 @@ TORSO_POS = {'mid': [0.0, 0.7854, -1.5708, 0.7854, 0.0, 0.0], 'ready': [0.0, 0.5
 
 def set_torso(ctx, goal, log=print):
     """Torso preset: 'mid' to pick, 'ready' (standing up a bit: the high carry pose over a cup with the left wrist at
-    yaw 180 has no IK at mid). rby1_check first; no-op when already there."""
+    yaw 180 had no IK at mid; v2: used when the optimal-control move does not reach it). rby1_check first; no-op
+    when already there."""
     pos = TORSO_POS[goal]
     if np.allclose(C.status(ctx)['torso'], pos, atol=0.02):
         return True
@@ -91,7 +96,8 @@ def pick_cup(ctx, name, side, look=None, depth=G.RIM_DEPTH, carry_bottom=None, l
     """Rim-pinch one cup and lift it. Start: hand free, torso any, cup localizable within fingers-down reach.
     End (ok): cup held fingers-down with its bottom at carry_bottom (default its rim + CARRY_CLEAR + one nest rise),
     measured.pinch for align_over. ok None: holding but the held check is unsure (checkpoint). ok False: hand open,
-    back at the pre-grasp (or nothing moved)."""
+    back at the pre-grasp (or nothing moved; after a failed pre-grasp move, where the controller stopped it).
+    Reachability is decided by the controller: a refused / unreached optimal-control move is the failure."""
     set_torso(ctx, 'mid', log=log)
     loc = locate(ctx, [name], look=look, log=log)
     cup = loc['measured']['cups'][name]
@@ -100,9 +106,11 @@ def pick_cup(ctx, name, side, look=None, depth=G.RIM_DEPTH, carry_bottom=None, l
         return _res(False, f'locate {name}: {cup.get("why")}', frames=frames)
     s = C.status(ctx)
     obj = dict(cup, rim_in=CUP_RIM_IN, depth=depth)
-    plan = G.plan_rim(obj, side, s['torso'], {'left_arm': s['left_arm'], 'right_arm': s['right_arm']}, pitches=(0,))
+    plan = G.plan_rim(obj, side, s['torso'], {'left_arm': s['left_arm'], 'right_arm': s['right_arm']}, pitches=(0,),
+                      cur_quat=s[f'{side}_ee']['quaternion'])
     if not plan['ok']:                     # fingers-down only (a tilted pinch let a cup swing off and fall)
         return _res(False, f"{name} out of fingers-down reach: {plan['why']}", frames=frames, measured={'cup': cup})
+    # closed form (v2): the rim point facing the shoulder, yaw nearer the hand's current yaw; no IK feasibility here
     log(f"  {name}: rim {plan['rim_angle']} deg, pitch {plan['pitch']}, yaw {math.degrees(plan['yaw']):.0f}")
     ctx.value('rby1_gripper', side=side, action='open')
     r = M.move_arm(ctx, side, plan['pre']['pos'], plan['pre']['quat'], log=log)
@@ -138,7 +146,7 @@ def pick_cup(ctx, name, side, look=None, depth=G.RIM_DEPTH, carry_bottom=None, l
     h = cup['height'] if cup.get('height') and 0.05 < cup['height'] < 0.25 else CUP_H
     pinch = {'rim_angle': plan['rim_angle'], 'r': cup['r'], 'rim_in': CUP_RIM_IN, 'depth': depth, 'h': h,
              'yaw': plan['yaw'], 'pitch': plan['pitch']}
-    # raise (joint move, same orientation) so the bottom clears the desk's other cups, then fingers down
+    # raise (optimal control, same orientation) so the bottom clears the desk's other cups, then fingers down
     bottom = carry_bottom if carry_bottom is not None else cup['rim_z'] + CARRY_CLEAR + NEST_RISE
     ee = C.status(ctx)[f'{side}_ee']
     tip_z_now = ee['position'][2] + (np.asarray(kin.R_from_quat(ee['quaternion'])) @ [0, 0, -G.TIP_LOW])[2]
@@ -213,7 +221,7 @@ def align_over(ctx, side, target, pinch, nudge=None, log=print):
     frames, off = [], None
     for i in range(ALIGN_STEPS + 1):
         r = M.move_arm(ctx, side, [float(xy[0]), float(xy[1]), z_safe], q, log=log)
-        if not r['ok'] and r['why'].startswith('IK') and set_torso(ctx, 'ready', log=log):
+        if not r['ok'] and M.unreached(r) and set_torso(ctx, 'ready', log=log):     # not reached, nothing pressed
             r = M.move_arm(ctx, side, [float(xy[0]), float(xy[1]), z_safe], q, log=log)   # stood up a bit
         if not r['ok']:
             return _res(False, f'over target: {r["why"]}', frames=frames)
