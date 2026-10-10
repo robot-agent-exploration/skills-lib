@@ -54,7 +54,10 @@ TORSO = {'mid': [0.0, 0.7854, -1.5708, 0.7854, 0.0, 0.0], 'lowest': [0.0, 1.2, -
 BUCKET_DIST = 0.62        # bucket centre ahead of the base origin at the drop stance (bumper 0.304, near rim 0.47)
 DESK_EDGE = 0.215         # desk front edge ahead of the base origin for reaching (bumper under the top; torso clear)
 SIGN = {'left': 1.0, 'right': -1.0}
-ARM_MODE = 'oc'           # move_arm: 'oc' = the controller's optimal control (v2), 'joint' = v1 local IK + joint moves
+# move_arm: 'oc' = the controller's optimal control (v2), 'joint' = v1 local IK + joint moves. Trial 2 (2026-10-10):
+# the OC pre-grasp from `ready` to fingers-down yaw -165 tripped left_arm_6 at 166 % on its first waypoint -> 'joint'
+# for the big reorientations (env STACK_CUPS_ARM_MODE overrides).
+ARM_MODE = __import__('os').environ.get('STACK_CUPS_ARM_MODE', 'joint')
 
 
 def look_at(ctx, point, max_pan=0.44):
@@ -129,15 +132,56 @@ def unreached(r):
     return bool((r.get('measured') or {}).get('unreached')) or str(r.get('why', '')).startswith('IK')
 
 
+def _tip_z(s, side, arm):
+    """Fingertips' lowest point (z, base frame) for this arm configuration at the live torso (local FK)."""
+    other = 'left' if side == 'right' else 'right'
+    p, R = kin.fk(kin.q_from(s['torso'], **{side: arm, other: s[f'{other}_arm']}), f'ee_{side}')
+    return float((p + R @ np.array([0, 0, -G.TIP_LOW]))[2])
+
+
+def _path_dip(s, side, cur, goal, n=8, tol=0.03):
+    """Lowest fingertip point along the straight joint-space path cur -> goal (local FK), compared with its two
+    ends: -> how far (m) it dips below the lower end, or None when it stays within tol. Why: trial 2 (2026-10-10)
+    a joint move of the right arm from its side pose to a cup pre-grasp swept the hand through a book, a tool case
+    and the cups on the desk (operator: "stop"); rby1_check checks hand height and self-collision, not desk
+    objects. A path that never dips below its ends passes over what the ends clear."""
+    other = 'left' if side == 'right' else 'right'
+    zs = []
+    for t in np.linspace(0.0, 1.0, n + 1):
+        arm = cur + (goal - cur) * t
+        q = kin.q_from(s['torso'], **{side: arm, other: s[f'{other}_arm']})
+        p, R = kin.fk(q, f'ee_{side}')
+        zs.append(float((p + R @ np.array([0, 0, -G.TIP_LOW]))[2]))
+    dip = min(zs[0], zs[-1]) - min(zs)
+    return dip if dip > tol else None
+
+
 def move_arm_joint(ctx, side, pos, quat, log=print):
     """v1: joint-space move of one arm to an ee pose: local IK from the live joints and torso, split so that no joint
     moves more than 1.1 rad per call, each part rby1_check'ed first."""
     s = C.status(ctx)
     other = 'left' if side == 'right' else 'right'
     arm, pe, re = kin.ik(side, s['torso'], s[f'{side}_arm'], list(pos), list(quat), s[f'{other}_arm'])
-    if pe > 0.003 or re > 0.02:                       # 1 deg of wrist orientation is harmless; position exact
+    if pe > 0.005 or re > 0.02:                       # 1 deg / 5 mm harmless (trial 2: a pre-grasp IK settled at 3.3 mm)
         return _res(False, f'IK {side} {list(pos)}: {pe * 1000:.1f} mm / {re:.3f} rad')
     cur = np.array(s[f'{side}_arm'])
+    z0, z1 = _tip_z(s, side, cur), _tip_z(s, side, arm)
+    low = _path_dip(s, side, cur, arm)
+    rise = max(z1 - z0 + 0.02 if z1 - z0 > 0.03 else 0.0, (low + 0.03) if low is not None else 0.0)
+    if rise > 0:                                     # start lower than the goal or the path dips: rise first
+        log(f'  {side} joint move: tips {z0:.3f} -> {z1:.3f} m, path dip {low}: raise the hand {rise:.3f} m first')
+        ee = np.array(s[f'{side}_ee']['position'])
+        r = cart(ctx, side, (ee + [0, 0, rise]).tolist(), speed=0.03, stop_n=30, log=log)
+        if not r['ok']:
+            return _res(False, f'raise before the joint move: {r["why"]}')
+        s = C.status(ctx)
+        arm, pe, re = kin.ik(side, s['torso'], s[f'{side}_arm'], list(pos), list(quat), s[f'{other}_arm'])
+        if pe > 0.005 or re > 0.02:
+            return _res(False, f'IK {side} {list(pos)} after the raise: {pe * 1000:.1f} mm / {re:.3f} rad')
+        cur = np.array(s[f'{side}_arm'])
+        low = _path_dip(s, side, cur, arm)
+        if low is not None:
+            return _res(False, f'{side} joint path still dips {low:.3f} m: plan the move in stages')
     n = max(1, int(math.ceil(float(np.max(np.abs(arm - cur))) / 1.1)))
     for i in range(1, n + 1):
         q = (cur + (arm - cur) * i / n).round(4).tolist()

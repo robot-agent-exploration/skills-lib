@@ -4,7 +4,7 @@ description: Stack one upright open cup into another on a desk with a one-hand f
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 2
+version: 3
 uses: [office-chair-tuck, oc-hand-reach]
 ---
 
@@ -88,6 +88,22 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 
 ## Failure modes
 
+- v3 (trial 2, 2026-10-10): the optimal-control pre-grasp from `ready` to fingers-down yaw -165 deg tripped
+  left_arm_6 at 166 % on its first waypoint -> `ARM_MODE` default 'joint' again (single local IK solve per target,
+  no search; env `STACK_CUPS_ARM_MODE=oc` for the OC path). `set_torso('mid')` from zero (1.57 rad) was refused
+  (1.2 rad per call) -> split moves. A pre-grasp IK at 3.3 mm failed the 3 mm gate -> 5 mm.
+- A target cup near the centre line (y 0.03) was out of the LEFT hand's reach for the high carry pose with the held
+  cup's yaw fixed by the grasp (IK 115 mm): a chest yaw torso_5 -0.3 (left shoulder forward) made it exact (0.1 mm).
+- A joint-space move of the RIGHT arm from its side pose (fingertips 0.80 m) to a cup pre-grasp swept through a book,
+  a tool case and the cups (operator "stop"; rby1_check does not see desk objects): `move_arm_joint` now rises
+  straight up to the goal's fingertip height first and refuses / raises when the FK-sampled joint path dips > 3 cm
+  below its ends. After a disturbance re-localize (the cups had moved 6 cm) and re-grasp with Cartesian moves only,
+  keeping the current gripper yaw and choosing the rim point that matches it (away from neighbours: a tool case 3 cm
+  from the shoulder-facing rim point).
+- The nested check read 'not nested' for two nested cups: after the 8 cm rise the open fingers were still in the
+  depth window and Gemini answered "only a single cup" -> rise 15 cm, prompt asks for two concentric rims; the agent
+  zoom on the frame decides when they disagree.
+
 - v2 (2026-10-09, compositional session): grasp planning is closed form (`pp_grasp.plan_rim`: the rim point facing
   the hand's shoulder, the radial yaw nearer the hand's current yaw, a forward tilt only for rims > 0.45 m ahead;
   only the 0.69 m reach rule rejects) and every hand move is the controller's optimal control
@@ -122,6 +138,7 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 | 2026-10-09 | push_chair_4ab505 | C2 controller | nested | no | `pick` -> `align` (stood up to ready, 1 correction 2.5 -> 0.5 cm) -> agent checkpoint (yes) -> `insert` (contact 18 N) |
 | 2026-10-09 | push_chair_4ab505 | offline perception (final code) | 8/10 single checks (failure); 0 wrong automatic decisions with the depth AND Gemini gates | yes | recorded frames: locate 2/2, align depth 2/3, Gemini 2/3, held 3/3, nested 1/2 |
 | 2026-10-09 | compositional_manipulation | S1 steps by the agent (v1 code + look_at fallback) | nested | no | two silver cups on the light-wood desk, left hand; align interrupted once (held cup taken as target, restored) |
+| 2026-10-10 | compositional_manipulation | S2 trial 2 steps (joint mode) | nested | no | left hand, chest yaw -0.3 for the align; skill nested check false negative, agent zoom = nested |
 
 ![start](evidence/images/2026-10-09-C2-start.jpg)
 ![alignment checkpoint](evidence/images/2026-10-09-C2-align-checkpoint.jpg)
@@ -131,3 +148,4 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 ![rim pinch origin: bowl](evidence/images/2026-10-09-PP1-bowl-rim-pinch.jpg)
 ![gemini masks](evidence/images/2026-10-09-offline-gemini-masks-desk.jpg)
 ![compositional S1: two cups nested](evidence/images/2026-10-09-compose-two-nested.jpg)
+![trial 2: two nested cups (zoom)](evidence/images/2026-10-10-compose2-two-nested-zoom.jpg)

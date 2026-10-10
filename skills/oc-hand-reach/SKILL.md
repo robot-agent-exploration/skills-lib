@@ -4,7 +4,7 @@ description: Move one or both RB-Y1 hands to base-frame poses with the robot con
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 ---
 
 # Hand reach by whole-body optimal control (no IK search)
@@ -96,6 +96,14 @@ The primitive itself moves in free space; callers own the object checkpoints.
    target. Failures show as `ok False` with the backend reason; the robot holds in place, still controllable:
    recover with a joint move away from the limit (e.g. arms to `ready`).
 4. Soft torso hold drift (0.01-0.03 rad) when the hold value was re-read per waypoint: now the start value.
+5. Trial 2 (2026-10-10), on the robot: with the 'natural' prior from a start far from NATURAL (an arm at `ready`
+   going to fingers-down yaw -165 deg, the chair-grasp pose going to hands-up, a fingers-down carry pose going to a
+   pitched drop pose) the FIRST waypoint moved several joints 0.5-0.9 rad at once and the backend stopped it:
+   left_arm_6 166 % and 168 %, right_arm_5 at its limit. The robot held in place each time. Use posture='current'
+   (anchor at the live joints) or a joint move (one local IK solve, joint-space interpolation at the backend's
+   speed caps) for big reorientations; the chair / cups / drop callers now use joint moves there.
+6. Two hands + prior settle 3-7 mm off (chair pre-grasp, twice): accept ~12 mm when the next move goes to an
+   absolute target.
 
 ## Evidence
 
@@ -109,6 +117,8 @@ The primitive itself moves in free space; callers own the object checkpoints.
 | C2 | 2026-10-09 | same | failure | yes | chair hands_up exact -45 deg: wrist-limit stop |
 | C3 | 2026-10-09 | same | success | yes | hands_up position-only (w_rot 0.3): 1.7 mm |
 | T3 | 2026-10-09 | same | success | yes | both hands visible pose, 1.0 / 0.8 mm |
+| T4 | 2026-10-10 | same | failure | no | trial 2 on the robot: 3 first-waypoint stops from far-from-natural starts (posture='current' added) |
+| C5 | 2026-10-10 | same | success | no | trial 2 chair two-hand pre-grasps: 5.5/6.5 and 3.3/4.2 mm |
 
 All in free air (no object); the object-level use is evidenced in the calling skills once they run with it.
 

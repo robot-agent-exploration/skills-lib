@@ -172,14 +172,14 @@ def arm_ik(ctx, targets, torso=TORSO_ZERO):
     return sol
 
 
-def move_arms_joint(ctx, targets, log=log_default, w_rot=5.0):
+def move_arms_joint(ctx, targets, log=log_default, w_rot=5.0, tol_m=0.005):
     """One or both hands to (pos, quat) in ONE whole-body optimal-control problem (oc-hand-reach.move_hands): the
     torso held where it is, a hand not listed held at its pose, elbow-down posture prior, waypoints within the
     per-call caps (<= 0.20 m, <= 0.35 rad). No local IK, no seed search (v4; the name is kept for callers).
     Tested 2026-10-09: both hands ready -> pitched pre-grasp shape in 3 calls / 23 s, 1.1 mm, 0.01 rad.
     -> oc result dict; raises RuntimeError when the controller refuses or stops."""
     r = OC.move_hands(ctx, {side: {'pos': [float(v) for v in pos], 'quat': [float(v) for v in quat], 'w_rot': w_rot}
-                            for side, (pos, quat) in targets.items()}, log=log)
+                            for side, (pos, quat) in targets.items()}, tol_m=tol_m, log=log)
     if not r['ok']:
         raise RuntimeError(f"optimal-control move {sorted(targets)}: {r['why']}")
     return r
@@ -223,12 +223,15 @@ def grasp_bar(ctx, prof, log=log_default):
     log('  grasp targets', {k: (v['yaw_deg'], v['grasp']) for k, v in T.items()})
     for side in ('right', 'left'):
         ctx.value('rby1_gripper', side=side, action='open')
-    # pre-grasp: both hands in one optimal-control problem (v4; v3 moved right then left by searched-seed IK)
-    move_arms_joint(ctx, {k: (T[k]['pre'], T[k]['quat']) for k in ('right', 'left')}, log=log)
+    # pre-grasp: both hands in one optimal-control problem (v4; v3 moved right then left by searched-seed IK).
+    # Two hands + posture prior settle 5-7 mm off (2026-10-09 trial 2): accept 12 mm, the descent is absolute.
+    move_arms_joint(ctx, {k: (T[k]['pre'], T[k]['quat']) for k in ('right', 'left')}, log=log, tol_m=0.012)
     base = wrist(status(ctx))
-    # descend along each hand's finger direction (+ the PRE_UP) in two translation steps
-    for _ in range(2):
-        d = {k: ((np.array(T[k]['grasp']) - np.array(T[k]['pre'])) / 2).round(4).tolist() for k in T}
+    # descend along each hand's finger direction (+ the PRE_UP) in two translation steps to ABSOLUTE targets
+    for i in (1, 2):
+        s = status(ctx)
+        d = {k: (np.array(T[k]['pre']) + (np.array(T[k]['grasp']) - np.array(T[k]['pre'])) * i / 2
+                 - np.array(s[f'{k}_ee']['position'])).round(4).tolist() for k in T}
         move_hands_cartesian(ctx, d)
         s = status(ctx)
         dw = {k: float(np.linalg.norm(wrist(s)[k] - base[k])) for k in base}
@@ -244,18 +247,72 @@ def grasp_bar(ctx, prof, log=log_default):
         if r['measured_width_m'] < 0.008 or not r.get('blocked_by_object'):
             ctx.value('rby1_gripper', side=side, action='open')
             return {'ok': False, 'why': f'{side} closed on air ({r["measured_width_m"]})', 'targets': T}
-        if hot:
+        hot_roll = [j for j in hot if j.endswith('_6')]
+        if hot and not hot_roll:                     # an elbow / wrist-pitch joint: soft re-close of this side
             log(f'  {side} closed: loads {hot} > {RELIEVE_PCT}% -> relieve and re-close soft')
             ctx.value('rby1_gripper', side=side, action='width', width_m=0.04)
             r = ctx.value('rby1_gripper', side=side, action='close', current_a=GRIP_SOFT_A)
             widths[side] = r['measured_width_m']
+    rr = relieve_wrist_roll(ctx, log=log)            # v4: the hot wrist roll is often the OTHER hand's
+    widths.update(rr.get('widths', {}))
     s = status(ctx)
     return {'ok': max_load(s) < 100, 'why': '' if max_load(s) < 100 else f'loads {loads(s)}', 'widths': widths,
             'loads': loads(s), 'targets': T, 'wrist_base': {k: v.round(1).tolist() for k, v in base.items()}}
 
 
+ROLL_STEP = 0.11          # wrist-roll correction while the gripper is open (trial 2: 108-113 % -> 35-45 %)
+
+
+def relieve_wrist_roll(ctx, log=log_default):
+    """After both grippers closed on the curved bar, a wrist ROLL joint (arm_6, rated 8 N m) can sit at 90-113 %:
+    closing the second gripper twists the chair against the first grip, and the tangent yaw from the bar fit is a few
+    degrees off (trial 2, 2026-10-10: left_arm_6 108-113 % twice; re-closing softer or relieving the side just closed
+    did not help). Fix: open the hot side to 4 cm (load drops to ~40 %), roll its joint 6 by ROLL_STEP in the
+    direction the closed grip pushed it (closed - open joint reading; + when that is below noise), re-close firm
+    (GRIP_A); if the load did not drop, undo and try the other direction once (a sign test, not a search).
+    -> {widths, loads, rolled}"""
+    s = status(ctx)
+    lo = loads(s)
+    hot = sorted((v, j) for j, v in lo.items() if j.endswith('_6') and j.split('_')[0] in ('left', 'right')
+                 and v > RELIEVE_PCT)
+    if not hot:
+        return {'loads': lo}
+    before, joint = hot[-1]
+    side = joint.split('_')[0]
+    q_closed = status(ctx)[f'{side}_arm'][6]
+    ctx.value('rby1_gripper', side=side, action='width', width_m=0.04)
+    q_open = status(ctx)[f'{side}_arm'][6]
+    first = 1.0 if (q_closed - q_open) >= -0.0002 else -1.0
+    widths = {}
+    for sign in (first, -first):
+        ctx.value('rby1_jog', joint=f'{side}_arm_6', mode='relative', value=round(sign * ROLL_STEP, 3))
+        g = ctx.value('rby1_gripper', side=side, action='close', current_a=GRIP_A)
+        widths[side] = g['measured_width_m']
+        after = loads(status(ctx)).get(joint, 0.0)
+        log(f'  wrist roll relief: {joint} {before:.0f} % -> roll {sign * ROLL_STEP:+.2f} rad -> {after:.0f} %')
+        if after < min(before, RELIEVE_PCT):
+            return {'widths': widths, 'loads': loads(status(ctx)), 'rolled': {joint: sign * ROLL_STEP}}
+        ctx.value('rby1_gripper', side=side, action='width', width_m=0.04)
+        ctx.value('rby1_jog', joint=f'{side}_arm_6', mode='relative', value=round(-sign * ROLL_STEP, 3))
+    g = ctx.value('rby1_gripper', side=side, action='close', current_a=GRIP_SOFT_A)
+    widths[side] = g['measured_width_m']
+    return {'widths': widths, 'loads': loads(status(ctx)), 'rolled': None}
+
+
+def arms_ready_joint(ctx, max_step=1.1):
+    """Both arms to READY_ARM by joint moves split so no joint moves more than max_step per call (backend cap 1.2)."""
+    s = status(ctx)
+    cur = {k: np.array(s[f'{k}_arm']) for k in READY_ARM}
+    n = max(1, int(math.ceil(max(float(np.max(np.abs(np.array(READY_ARM[k]) - cur[k]))) for k in cur) / max_step)))
+    for i in range(1, n + 1):
+        tg = {f'{k}_arm': {'positions': (cur[k] + (np.array(READY_ARM[k]) - cur[k]) * i / n).round(4).tolist()}
+              for k in cur}
+        ctx.value('rby1_move_body', targets=tg)
+
+
 def release(ctx, log=log_default):
-    """Open both grippers, back the hands out along their finger axes and lift; then hands_up."""
+    """Open both grippers, back the hands out along their finger axes and lift; then arms to ready by split joint
+    moves (v4, trial 2: the optimal-control hands_up from here tripped left_arm_6 at 168 % on its first waypoint)."""
     s = status(ctx)
     for side in ('left', 'right'):
         ctx.value('rby1_gripper', side=side, action='open')
@@ -265,7 +322,7 @@ def release(ctx, log=log_default):
         f = R @ np.array([0, 0, -1.0])
         out[side] = (-0.10 * f + np.array([0, 0, 0.04])).round(4).tolist()
     move_hands_cartesian(ctx, out)
-    hands_up(ctx, log=log)
+    arms_ready_joint(ctx)
     return {'ok': True}
 
 

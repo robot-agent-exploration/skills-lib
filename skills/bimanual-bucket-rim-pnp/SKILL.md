@@ -4,7 +4,7 @@ description: Pick a ~5-gallon plastic bucket (thin wall, wire bail handle) off t
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 2
+version: 3
 uses: [bimanual-box-pnp]
 ---
 
@@ -116,6 +116,14 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
   fast to relieve") - do the LIFT AT ONCE immediately, do not fiddle.
 - After placing, a hand-planned 151 deg base turn swung the base's rear into the cabinet (not this skill's retreat):
   check the whole swept footprint (rear r 0.63 m about the axle) before any turn near the cabinet.
+- v3 (trial 2, 2026-10-10): `find_cabinet` could not see a cabinet BEHIND the robot (looks ahead / +-0.5 only):
+  pick and lift the bucket first, turn with it, look at the cabinet yourself, measure its top corners by pixel depth
+  and write `world.objects['cabinet']` = {corners_odom, top_z} before `approach_edge`; approach an edge the route
+  reaches without passing near other floor objects (the front edge route swept the base's rear over a box).
+- Handle ears at the left / right but BELOW the pinch height (5 cm under the rim top) are fine (operator).
+- left_arm_5 150 % stop half way LIFT1 -> READY (the bucket held the cups + banana): holding still the load fell to
+  137 % and re-sending the same torso target stood up; at torso zero with the hands up loads were 61 %. grasp_lift
+  now re-sends the stopped torso target once (operator: "just try lift it").
 - PENDING (operator: "no brute force search"): `grasp_plan.solve_arm` still tries 7+ IK seeds per arm for the
   pinch pre-grasp / grasp; convert those moves to oc-hand-reach (`move_hands` with torso=TORSO_GRASP and the
   measured M1 configuration as the posture prior), as office-chair-tuck v3 and stack-cups v2 did.
@@ -144,6 +152,7 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 | reset manual | 2026-10-09 | success | no | cabinet top -> floor (reverse) |
 | C1 controller | 2026-10-09 | success with 2 interventions (fixed in code, not re-run) | no | bucket 0.79 m ahead, cabinet behind it |
 | 2026-10-09 | compositional_manipulation | B1 steps (run 20261009_221136_basket_pnp) | bucket (with cups + banana inside) on the cabinet's left unit, right unit left free for a box | no | lift at once after a wrist stop; world.held set by hand, edge_choice 0 |
+| 2026-10-10 | compositional_manipulation | B2 trial 2 steps (run 20261010_004716_basket_pnp) | bucket on the cabinet's end, rest free for the box | no | cabinet written by the agent (find_cabinet blind behind), lift retried after a 150 % stop |
 
 ![scene](evidence/images/m1_01_scene_bucket_left_of_cabinet.jpg)
 ![silhouette fit](evidence/images/m1_02_silhouette_fit_1p5m.jpg)
@@ -160,3 +169,4 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 ![C1 touchdown](evidence/images/c1_06_touchdown_on_top.jpg)
 ![C1 verify view](evidence/images/c1_07_verify_view.jpg)
 ![compositional B1: bucket on the cabinet, right unit free](evidence/images/2026-10-09-compose-bucket-on-cabinet.jpg)
+![trial 2: bucket on the cabinet](evidence/images/2026-10-10-compose2-bucket-on-cabinet.jpg)
