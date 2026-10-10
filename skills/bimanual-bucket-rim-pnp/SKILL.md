@@ -4,7 +4,7 @@ description: Pick a ~5-gallon plastic bucket (thin wall, wire bail handle) off t
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
+version: 2
 uses: [bimanual-box-pnp]
 ---
 
@@ -110,6 +110,16 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 
 ## Failure modes
 
+- v2 (2026-10-09, compositional session): `CAB_DESC` no longer requires a box on the cabinet (Gemini rejected the
+  cabinet without one). The second pinch overloaded the left wrist (150 % stop); small corrective moves did not
+  help, standing up at once did (torso ready -> zero with the arms fixed, hands up: loads 55 %; operator "stand up
+  fast to relieve") - do the LIFT AT ONCE immediately, do not fiddle.
+- After placing, a hand-planned 151 deg base turn swung the base's rear into the cabinet (not this skill's retreat):
+  check the whole swept footprint (rear r 0.63 m about the axle) before any turn near the cabinet.
+- PENDING (operator: "no brute force search"): `grasp_plan.solve_arm` still tries 7+ IK seeds per arm for the
+  pinch pre-grasp / grasp; convert those moves to oc-hand-reach (`move_hands` with torso=TORSO_GRASP and the
+  measured M1 configuration as the posture prior), as office-chair-tuck v3 and stack-cups v2 did.
+
 1. **Second pinch overloads a wrist** (arm_5 rated 10 N m): two rigid pinches on one rim over-constrain the bucket; a
    few mm of mismatch loaded right_arm_5 / left_arm_5 to 150-171 % (torque guard stops, no fault) in M1 and C1. Now:
    close the first gripper with the bucket free (self-centres), tolerate a torque stop on the second close if it
@@ -133,6 +143,7 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 | M1 manual | 2026-10-09 | success | no | bucket left of the cabinet, re-approach for the ears, carry to the cabinet side |
 | reset manual | 2026-10-09 | success | no | cabinet top -> floor (reverse) |
 | C1 controller | 2026-10-09 | success with 2 interventions (fixed in code, not re-run) | no | bucket 0.79 m ahead, cabinet behind it |
+| 2026-10-09 | compositional_manipulation | B1 steps (run 20261009_221136_basket_pnp) | bucket (with cups + banana inside) on the cabinet's left unit, right unit left free for a box | no | lift at once after a wrist stop; world.held set by hand, edge_choice 0 |
 
 ![scene](evidence/images/m1_01_scene_bucket_left_of_cabinet.jpg)
 ![silhouette fit](evidence/images/m1_02_silhouette_fit_1p5m.jpg)
@@ -148,3 +159,4 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 ![C1 over the top](evidence/images/c1_05_over_cabinet_top.jpg)
 ![C1 touchdown](evidence/images/c1_06_touchdown_on_top.jpg)
 ![C1 verify view](evidence/images/c1_07_verify_view.jpg)
+![compositional B1: bucket on the cabinet, right unit free](evidence/images/2026-10-09-compose-bucket-on-cabinet.jpg)

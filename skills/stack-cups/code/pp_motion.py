@@ -4,8 +4,15 @@ stops in a safe state (holding still, nothing pressed) when a check fails.
 
 Tested values (2026-10-09, torso mid, custom round fingers): grip 0.5 A; touch-down 5 mm steps, contact = wrist
 force change > 5 N; first lift 4 cm then a depth rise check; carry poses below; gentle drop: hand pitched -30°,
-torso lowest, ee (bucket_x - 0.09, bucket_y, 0.69) -> object just above the rim (0.36 m), open."""
+torso lowest, ee (bucket_x - 0.09, bucket_y, 0.69) -> object just above the rim (0.36 m), open.
+
+v2 (2026-10-09, compositional session): move_arm = move_arm_oc, the robot controller's whole-body optimal control
+through the oc-hand-reach skill (torso held, other hand held, elbow-down prior, waypoints <= 0.20 m / 0.35 rad); no
+local IK. move_arm_joint is v1 (local IK + joint moves); ARM_MODE = 'joint' switches back."""
+import importlib.util
 import math
+import re
+from pathlib import Path
 
 import _deps  # noqa: F401
 import numpy as np
@@ -16,6 +23,24 @@ import nav
 import pp_grasp as G
 import pp_perception as PP
 import pp_vis
+
+
+def _load_oc_reach():
+    """oc_reach.py of the oc-hand-reach skill, by path relative to this file: skills/oc-hand-reach/code next to
+    skills/stack-cups/code (library), or skill-library/skills/oc-hand-reach/code from a workspace copy in
+    code/<project>/."""
+    here = Path(__file__).resolve()
+    for d in (here.parents[2] / 'oc-hand-reach' / 'code',
+              here.parents[2] / 'skill-library' / 'skills' / 'oc-hand-reach' / 'code'):
+        if (d / 'oc_reach.py').exists():
+            spec = importlib.util.spec_from_file_location('oc_reach', d / 'oc_reach.py')
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+    raise ImportError(f'stack-cups needs oc_reach.py of the oc-hand-reach skill (not found from {here.parent})')
+
+
+OC = _load_oc_reach()
 
 CLOSE_A = 0.5
 TOUCH_N = 5.0
@@ -29,6 +54,7 @@ TORSO = {'mid': [0.0, 0.7854, -1.5708, 0.7854, 0.0, 0.0], 'lowest': [0.0, 1.2, -
 BUCKET_DIST = 0.62        # bucket centre ahead of the base origin at the drop stance (bumper 0.304, near rim 0.47)
 DESK_EDGE = 0.215         # desk front edge ahead of the base origin for reaching (bumper under the top; torso clear)
 SIGN = {'left': 1.0, 'right': -1.0}
+ARM_MODE = 'oc'           # move_arm: 'oc' = the controller's optimal control (v2), 'joint' = v1 local IK + joint moves
 
 
 def look_at(ctx, point, max_pan=0.44):
@@ -65,7 +91,46 @@ def force(ctx, side):
 
 
 def move_arm(ctx, side, pos, quat, log=print):
-    """Joint-space move of one arm to an ee pose: local IK from the live joints and torso, split so that no joint
+    """One hand to an ee pose (base frame): move_arm_oc (default, ARM_MODE 'oc') or move_arm_joint (ARM_MODE
+    'joint'). -> {ok, why, measured: {ee, ...}, frames}"""
+    if ARM_MODE == 'joint':
+        return move_arm_joint(ctx, side, pos, quat, log=log)
+    return move_arm_oc(ctx, side, pos, quat, log=log)
+
+
+_REFUSED = re.compile(r'waypoint \d+/\d+ refused: ')
+
+
+def move_arm_oc(ctx, side, pos, quat, log=print, **kw):
+    """One hand to an ee pose by the controller's whole-body optimal control (oc-hand-reach move_hands): the torso
+    held, the other hand held at its pose, a weak elbow-down posture prior, the path split into waypoints (<= 0.20 m,
+    <= 0.35 rad), each rby1_check'ed. No local IK, no seed or orientation search. quat None keeps the orientation;
+    kw: move_hands options (tol_m 0.005, tol_rad 0.03, step_m, step_rad, max_load 130, ...).
+    -> _res(ok, why, measured={ee, err_pos_m, err_rot_rad, calls, seconds, loads, unreached}). unreached: the target
+    was not reached although nothing pressed (a waypoint refused by rby1_check, or the controller settled outside the
+    tolerance); a caller may change posture (stand up) and retry. A force / torque / load stop is never unreached."""
+    tgt = {'pos': [float(v) for v in pos], 'quat': None if quat is None else [float(v) for v in quat]}
+    try:
+        r = OC.move_hands(ctx, {side: tgt}, log=log, **kw)
+    except RuntimeError as e:                       # a status / check call failed: nothing was commanded after it
+        return _res(False, f'oc {side}: {e}', measured={'ee': C.status(ctx)[f'{side}_ee'], 'unreached': False})
+    m = r['measured'][side]
+    why = r.get('why') or ''
+    unreached = not r['ok'] and bool(_REFUSED.match(why) or why.startswith('final error above tolerance'))
+    return _res(r['ok'], '' if r['ok'] else f"oc {side} -> {[round(v, 3) for v in tgt['pos']]}: {why}",
+                measured={'ee': C.status(ctx)[f'{side}_ee'], 'err_pos_m': m['err_pos_m'],
+                          'err_rot_rad': m['err_rot_rad'], 'calls': r['calls'], 'seconds': r['seconds'],
+                          'loads': r['loads'], 'unreached': unreached})
+
+
+def unreached(r):
+    """Did a move_arm fail only because its target was not reached (nothing pressed)? v1: 'IK ...' (no joint
+    solution, nothing moved); v2: move_arm_oc's measured.unreached. Callers may change posture and retry."""
+    return bool((r.get('measured') or {}).get('unreached')) or str(r.get('why', '')).startswith('IK')
+
+
+def move_arm_joint(ctx, side, pos, quat, log=print):
+    """v1: joint-space move of one arm to an ee pose: local IK from the live joints and torso, split so that no joint
     moves more than 1.1 rad per call, each part rby1_check'ed first."""
     s = C.status(ctx)
     other = 'left' if side == 'right' else 'right'

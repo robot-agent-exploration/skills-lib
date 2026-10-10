@@ -4,8 +4,8 @@ description: Stack one upright open cup into another on a desk with a one-hand f
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 1
-uses: [office-chair-tuck]
+version: 2
+uses: [office-chair-tuck, oc-hand-reach]
 ---
 
 # Stack two cups (nest one cup into another)
@@ -87,6 +87,18 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 | insert (nested unsure) | haiku / agent | after-release frame | Is the released cup nested inside the other cup (upright, both rims together), not lying or beside it? | yes / no | yes | re-locate both cups, pick the loose one again |
 
 ## Failure modes
+
+- v2 (2026-10-09, compositional session): grasp planning is closed form (`pp_grasp.plan_rim`: the rim point facing
+  the hand's shoulder, the radial yaw nearer the hand's current yaw, a forward tilt only for rims > 0.45 m ahead;
+  only the 0.69 m reach rule rejects) and every hand move is the controller's optimal control
+  (`pp_motion.move_arm` = `move_arm_oc` via oc-hand-reach; `ARM_MODE = 'joint'` restores v1). The v1 search over
+  rim angles x pitches x yaws with local IK is kept as `plan_rim_search` (unused). Offline self-test
+  (`python3 code/pp_grasp.py`): every closed-form pose reachable by the local-IK oracle (0.0-2.8 mm). NOT yet run
+  on the robot with v2: watch the first pre-grasp and lift.
+- The head could not point at a cup far to the side ("cannot point", pan limit 0.473): `pp_motion.look_at` now
+  clamps the pan to +-0.44 at the same range and height (compositional session).
+- An interrupted `align` re-localized the HELD cup as the target (r 0.026, rim 1.033 m): restore the pre-pick scan
+  fix of the target before aligning again (look at the align frame before inserting).
 - Fingers modelled 0.20 m + 0.03 ball (robot-interface): grasps closed 3-4 cm too high; real open-tip lowest point
   is 0.192 m (desk contact). Fixed in `pp_grasp.TIP_LOW`.
 - Inside grip (closed fingers into the cup, spread) held, but the operator rejected it for drinking cups; rim pinch.
@@ -109,6 +121,7 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 | 2026-10-09 | push_chair_4ab505 | C1 manual | nested | no | silver cups 0.24 m apart; primitives run by hand, operator: rim pinch, not high enough |
 | 2026-10-09 | push_chair_4ab505 | C2 controller | nested | no | `pick` -> `align` (stood up to ready, 1 correction 2.5 -> 0.5 cm) -> agent checkpoint (yes) -> `insert` (contact 18 N) |
 | 2026-10-09 | push_chair_4ab505 | offline perception (final code) | 8/10 single checks (failure); 0 wrong automatic decisions with the depth AND Gemini gates | yes | recorded frames: locate 2/2, align depth 2/3, Gemini 2/3, held 3/3, nested 1/2 |
+| 2026-10-09 | compositional_manipulation | S1 steps by the agent (v1 code + look_at fallback) | nested | no | two silver cups on the light-wood desk, left hand; align interrupted once (held cup taken as target, restored) |
 
 ![start](evidence/images/2026-10-09-C2-start.jpg)
 ![alignment checkpoint](evidence/images/2026-10-09-C2-align-checkpoint.jpg)
@@ -117,3 +130,4 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 ![rejected inside grip](evidence/images/2026-10-09-C1-inside-grip-rejected.jpg)
 ![rim pinch origin: bowl](evidence/images/2026-10-09-PP1-bowl-rim-pinch.jpg)
 ![gemini masks](evidence/images/2026-10-09-offline-gemini-masks-desk.jpg)
+![compositional S1: two cups nested](evidence/images/2026-10-09-compose-two-nested.jpg)
