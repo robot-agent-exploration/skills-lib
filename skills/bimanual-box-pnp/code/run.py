@@ -35,10 +35,11 @@ if __name__ == '__main__':
     ap.add_argument('--resume')
     ap.add_argument('--stop-after')
     ap.add_argument('--no-checkpoints', action='store_true')
+    ap.add_argument('--params', help='JSON kwargs for the step the run starts at, e.g. {"edge_x": 0.45}')
     a = ap.parse_args()
     sys.path.insert(0, str(workspace_root()))
     from api.runtime import Context
     with Context() as session:
         r = main(session, a.task, start=a.start, resume=a.resume, checkpoints=not a.no_checkpoints,
-                 stop_after=a.stop_after)
+                 stop_after=a.stop_after, params=json.loads(a.params) if a.params else None)
     print(json.dumps(r, indent=1, default=str)[:6000])

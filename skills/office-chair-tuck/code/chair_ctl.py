@@ -4,7 +4,8 @@ Measured recipe (2026-10-09, memory/TIPS.md):
 - stand square behind the backrest, torso ZERO, chest 0; the backrest top bar ~0.6 m ahead at z≈1.0
 - the bar is CURVED: grip it with both hands at its centre ±0.10 m, each gripper yawed to the local tangent,
   pitched -45° (fingers forward-down), open tips' middle (0.20 m along ee -z) on the bar centre
-- change gripper yaw only with JOINT moves (the Cartesian controller tripped left_arm_6); Cartesian = translation
+- v4: hand poses (incl. gripper yaw changes) by the controller's whole-body optimal control (oc-hand-reach:
+  rotation <= 0.35 rad per call; v1's large Cartesian rotations tripped left_arm_6); Cartesian = translation
 - close left 0.4 A then right 0.4 A; a wrist joint over 85 % -> open that side to 4 cm, re-close at 0.25 A
 - move the chair with the base (forward/back 3-5 cm steps at 0.03 m/s, turns in 0.15 rad steps) while holding
 
@@ -19,6 +20,12 @@ import pinocchio as pin
 
 import geom
 import kin
+
+import importlib.util as _ilu
+from pathlib import Path as _P
+_spec = _ilu.spec_from_file_location('oc_reach', _P(__file__).resolve().parents[2] / 'oc-hand-reach' / 'code' / 'oc_reach.py')
+OC = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(OC)
 
 TORSO_ZERO = [0.0] * 6
 PITCH = math.radians(-45)
@@ -151,53 +158,31 @@ READY_ARM = {'right': [-0.7854, -0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0],
              'left': [-0.7854, 0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0]}
 
 
-def _mirror(arm):
-    """The other arm's joints mirrored through the robot's xz plane (left <-> right)."""
-    a = np.array(arm, float)
-    return a * np.array([1, -1, -1, 1, -1, 1, -1])
-
-
 def arm_ik(ctx, targets, torso=TORSO_ZERO):
-    """targets {side: (pos, quat)} -> {side: joints} solved locally; raises if not exact.
-    Seeds: the current joints, then the other arm mirrored, then `ready` (v3: from the wide `measure` pose the
-    current seed got stuck at 0.29 m for the left pre-grasp; the mirrored right arm solved it exactly)."""
+    """targets {side: (pos, quat)} -> {side: joints}: ONE local solve from the current joints (analysis only; the
+    robot path uses move_arms_joint = the controller's optimal control). v4 removed v3's seed fallback (current,
+    mirrored other arm, ready): searching seeds once returned a flipped-shoulder solution (joint1 -3.1)."""
     s = status(ctx)
     sol = {}
     for side, (pos, quat) in targets.items():
-        other = 'left' if side == 'right' else 'right'
-        cur = np.array(s[f'{side}_arm'])
-        best = None
-        for seed in (cur, _mirror(s[f'{other}_arm']), np.array(READY_ARM[side])):
-            a, ep, er = kin.ik(side, torso, seed, pos, quat)
-            if ep <= 0.002 and er <= 0.01:
-                dist = float(np.abs(a - cur).max())
-                if best is None or dist < best[0]:
-                    best = (dist, a)
-                if seed is cur:
-                    break
-        if best is None:
-            raise RuntimeError(f'IK {side} {pos}: pos err {ep:.4f} rot err {er:.4f} (all seeds)')
-        sol[side] = [round(float(v), 4) for v in best[1]]
+        a, ep, er = kin.ik(side, torso, np.array(s[f'{side}_arm']), pos, quat)
+        if ep > 0.002 or er > 0.01:
+            raise RuntimeError(f'IK {side} {pos}: pos err {ep:.4f} rot err {er:.4f}')
+        sol[side] = [round(float(v), 4) for v in a]
     return sol
 
 
-def move_arms_joint(ctx, targets, log=log_default):
-    """Joint-space move of one or both arms to IK solutions (the safe way to change gripper yaw). Splits moves
-    larger than 1.1 rad per joint. -> reply"""
-    sol = arm_ik(ctx, targets)
-    s = status(ctx)
-    cur = {k: np.array(s[f'{k}_arm']) for k in sol}
-    steps = max(1, int(math.ceil(max(np.abs(np.array(sol[k]) - cur[k]).max() for k in sol) / 1.1)))
-    rep = None
-    for i in range(1, steps + 1):
-        tg = {f'{k}_arm': {'positions': (cur[k] + (np.array(sol[k]) - cur[k]) * i / steps).round(4).tolist()}
-              for k in sol}
-        chk = call(ctx, 'rby1_check', {'tool': 'rby1_move_body', 'arguments': {'targets': tg}})
-        if not chk.get('accepted'):
-            raise RuntimeError(f"move_body refused: {chk.get('reason')}")
-        rep = ctx.value('rby1_move_body', targets=tg)
-        log(f'  arms joint move {i}/{steps}: ok')
-    return rep
+def move_arms_joint(ctx, targets, log=log_default, w_rot=5.0):
+    """One or both hands to (pos, quat) in ONE whole-body optimal-control problem (oc-hand-reach.move_hands): the
+    torso held where it is, a hand not listed held at its pose, elbow-down posture prior, waypoints within the
+    per-call caps (<= 0.20 m, <= 0.35 rad). No local IK, no seed search (v4; the name is kept for callers).
+    Tested 2026-10-09: both hands ready -> pitched pre-grasp shape in 3 calls / 23 s, 1.1 mm, 0.01 rad.
+    -> oc result dict; raises RuntimeError when the controller refuses or stops."""
+    r = OC.move_hands(ctx, {side: {'pos': [float(v) for v in pos], 'quat': [float(v) for v in quat], 'w_rot': w_rot}
+                            for side, (pos, quat) in targets.items()}, log=log)
+    if not r['ok']:
+        raise RuntimeError(f"optimal-control move {sorted(targets)}: {r['why']}")
+    return r
 
 
 def move_hands_cartesian(ctx, deltas, lin=0.03):
@@ -214,9 +199,11 @@ def move_hands_cartesian(ctx, deltas, lin=0.03):
 
 
 def hands_up(ctx, log=log_default):
-    """Both hands to the 'up' pose (fingers well above the chair), gripper yaw 0, via joint moves."""
+    """Both hands to the 'up' positions (fingers well above the chair). v4: optimal control with a loose
+    orientation (w_rot 0.3): at torso zero the exact -45 deg pitch there needs the wrist at its limit (right_arm_5
+    reached 1.892 rad and the backend stopped the move, 2026-10-09)."""
     q0, _ = quat_pitch_yaw(0.0)
-    return move_arms_joint(ctx, {k: (list(v), q0) for k, v in UP_POSE.items()}, log=log)
+    return move_arms_joint(ctx, {k: (list(v), q0) for k, v in UP_POSE.items()}, log=log, w_rot=0.3)
 
 
 def ensure_torso_zero(ctx, log=log_default):
@@ -236,9 +223,8 @@ def grasp_bar(ctx, prof, log=log_default):
     log('  grasp targets', {k: (v['yaw_deg'], v['grasp']) for k, v in T.items()})
     for side in ('right', 'left'):
         ctx.value('rby1_gripper', side=side, action='open')
-    # pre-grasp: right first (it is outside), then left, as joint moves (yaw changes here)
-    move_arms_joint(ctx, {'right': (T['right']['pre'], T['right']['quat'])}, log=log)
-    move_arms_joint(ctx, {'left': (T['left']['pre'], T['left']['quat'])}, log=log)
+    # pre-grasp: both hands in one optimal-control problem (v4; v3 moved right then left by searched-seed IK)
+    move_arms_joint(ctx, {k: (T[k]['pre'], T[k]['quat']) for k in ('right', 'left')}, log=log)
     base = wrist(status(ctx))
     # descend along each hand's finger direction (+ the PRE_UP) in two translation steps
     for _ in range(2):
@@ -407,7 +393,7 @@ def measure(ctx, log=log_default):
     import perception as P
     ensure_torso_zero(ctx, log=log)
     q0, _ = quat_pitch_yaw(0.0)
-    move_arms_joint(ctx, {'left': ([0.36, 0.46, 1.32], q0), 'right': ([0.36, -0.42, 1.32], q0)}, log=log)
+    move_arms_joint(ctx, {'left': ([0.36, 0.46, 1.32], q0), 'right': ([0.36, -0.42, 1.32], q0)}, log=log, w_rot=0.3)
     fid = observe(ctx, head=(0.0, 0.66))
     prof = bar_profile(fid)
     desk = P.desk_front(fid)

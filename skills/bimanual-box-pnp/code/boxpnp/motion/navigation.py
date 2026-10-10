@@ -332,11 +332,25 @@ def measure_edge(rt, looks=((0.6, 0.25, 0.68), (0.6, -0.25, 0.68))):
     return None
 
 
-def final_table_approach(rt, name, stance_edge=0.385, max_first=1.2):
+def final_table_approach(rt, name, stance_edge=0.385, max_first=1.2, edge_x=None):
     """Drive straight to the table ahead until its near edge is stance_edge ahead of the base origin (bumper ~8 cm
     from it). The edge comes from Gemini's mask of the top (v1's far dark-pixel fit read 0.917 m for ~0.74 m and
     the robot drove too close; the per-segment depth check stopped it). The table is the target: 12 cm around its
-    outline are ignored by the path check (drawer fronts / handles)."""
+    outline are ignored by the path check (drawer fronts / handles).
+    edge_x: the agent's own measurement (base frame, m) of the near edge - pass it when the held box hides the near
+    top or a second table is in view: 2026-10-09 the mask edge read 1.053 m (the farther of two cabinets) for a top
+    0.45 m ahead (drawer face below the box at 0.47 m by pixel depth); the path check then blocked the drive."""
+    if edge_x is not None:
+        last = float(edge_x) - stance_edge
+        rt.log(f'{name} edge {edge_x:.3f} (agent-measured): drive {last:+.3f}')
+        if not (-0.05 <= last <= 0.25):
+            raise StepFailed(f'agent edge {edge_x:.3f}: {last:+.3f} m to the stance is outside -0.05..0.25')
+        if last > 0.01:
+            rt.base(forward=last, slow=True)
+        rt.world.notes[f'{name}_edge_x'] = float(edge_x) - max(last, 0.0)
+        rt.world.notes.setdefault(f'{name}_top_z', 0.70)
+        return {'edge_x': round(rt.world.notes[f'{name}_edge_x'], 3), 'top_z': rt.world.notes[f'{name}_top_z'],
+                'source': 'agent'}
     e = measure_edge(rt)
     if e is None:
         raise StepFailed(f'{name} edge not measurable (frames {rt.frames[-2:]})')
