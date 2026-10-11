@@ -4,7 +4,7 @@ description: Task composition on the RB-Y1 - move the desk chair out and park it
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 2
+version: 3
 uses: [office-chair-tuck, stack-cups, bimanual-bucket-rim-pnp, bimanual-box-pnp, oc-hand-reach]
 ---
 
@@ -71,6 +71,20 @@ check (`run.py sweep_check`) against fresh depth and the furniture you identifie
 - Home: go back to the start view (desk ~1.5 m ahead, the original heading offset), measured from the desk, not by
   odometry.
 
+### Trial-3 rules (R3, 2026-10-10)
+
+- Offline rehearsal before the episode (code/compose/t3_offline_plan.py in the session workspace): survey the scene
+  with chest yaw + head pan (the cabinet stood directly BEHIND the start), pixel-depth map in the start frame, every
+  leg sweep-checked offline. It found the tight spots (bucket turn by the cabinet corner) before the run.
+- Base moves: ONE call at a time - a refused drive (over the 1 m cap) sent in parallel with the next turn let the
+  turn run in the wrong place. Re-measure furniture on the way (the cabinet outline from odometry was 0.1-0.25 m
+  off); turns with a held object need the axle >= 0.67 m from furniture (bucket / box swing ~0.6 m).
+- Reach first, then the posture: cups centred 0.33 m ahead -> torso ready + 0.10 m back; banana -> fingers tilted
+  along it; drops into the bucket by the R2 method (drop_pose pitch -0.7 + IK joint moves, mid / lowest).
+- Box next to the bucket on a 0.9 m top: from the long side onto the free half when the far short edge is awkward.
+- Home: drive to the start odometry, then correct from the desk (front 1.6 m, 0.16 rad right of its normal):
+  odometry was 0.33 m short after 100 min.
+
 ## Code
 
 `code/run.py:main(ctx, step, **args)` -> `{ok, measured, why}`:
@@ -131,6 +145,7 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 | R1 | 2026-10-09 | compositional_manipulation | success (all 6 conditions) | no | step by step with the agent; operator hints: deeper grasp, firm grip, natural arms, stand up fast, base crash warning, "just grasp it", "look at it yourself" |
 | D1 | 2026-10-09 | same | success (drop pose only, free air, no release) | yes | `run.py drop` right hand target (0.62, -0.12, 0.92): 3 calls, 23 s, 2.3 mm |
 | R2 | 2026-10-10 | same | success (all 6 conditions) | no | trial 2 after an operator reset, step by step; operator: stop / lift first (desk sweep), banana left + cups right, stand up, ears fine, just try lift it, home |
+| R3 | 2026-10-10 | same | success (all 6 conditions, 98 min) | no | trial 3 after an offline rehearsal; operator: check torso/height vs previous skills, align precisely, check previous approaches (drops), just move to the cabinet, do not cut into the cabinet, use the park pose; 2 MinorFaults (re-armed by the operator) |
 
 ![start](evidence/images/2026-10-09-start.jpg)
 ![chair parked, cups on the desk](evidence/images/2026-10-09-chair-parked-cups-on-desk.jpg)
@@ -139,3 +154,6 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 ![R2: cups (nested) and banana in the bucket](evidence/images/2026-10-10-R2-cups-banana-in-bucket.jpg)
 ![R2 end: bucket and box on the cabinet](evidence/images/2026-10-10-R2-end-bucket-box-on-cabinet.jpg)
 ![R2 end: chair tucked](evidence/images/2026-10-10-R2-end-chair-tucked.jpg)
+![R3: cups (nested) and banana in the bucket](evidence/images/2026-10-10-R3-cups-banana-in-bucket.jpg)
+![R3 end: bucket and box on the cabinet](evidence/images/2026-10-10-R3-end-bucket-box-on-cabinet.jpg)
+![R3 end: chair tucked](evidence/images/2026-10-10-R3-end-chair-tucked.jpg)

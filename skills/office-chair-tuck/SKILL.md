@@ -4,7 +4,7 @@ description: Grasp a wheeled office chair by the top bar of its mesh backrest wi
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 4
+version: 5
 uses: [oc-hand-reach]
 ---
 
@@ -125,6 +125,15 @@ edge with the armrests just under the edge). Every base command retries once on 
   of desk / cabinet / chair from pixel depth at the current pose), not from old odometry outlines. The desk's
   front-edge angle from a far left-end view was 0.3 rad off: re-measure it from 1.3-1.9 m before the final tuck.
 
+- v5 (trial 3, 2026-10-10): the two-hand optimal-control pre-grasp tripped left_arm_6 at 165 % in free air on its
+  first waypoint -> `move_arms_joint(mode='joint')`: one local IK solve from the current joints + a joint move split
+  <= 1.1 rad (also the automatic fallback when an OC move stops on 150 % / a limit); `grasp_bar` uses it for the
+  pre-grasp (IK wrists at 1.62, fingertip path checked by FK above the bar). relieve_wrist_roll ran on the robot:
+  left_arm_6 89 % -> 0 %. The tuck stance for a chair you parked yourself comes straight from the park odometry
+  (operator: "retrieve the chair position from where you parked it"; 7 cm off the pixel-depth check after an hour):
+  plan the route around furniture from fresh frames, then `measure`. Do NOT run `measure` while holding the chair
+  (it moves the hands): measure the desk front by pixel depth along its edge (fit the middle part; the corner
+  region curves) and pass `tuck <desk_front_x> <bar_x>`.
 ## Evidence
 | date | session | run | outcome | unattended | conditions |
 |---|---|---|---|---|---|
@@ -136,6 +145,8 @@ edge with the armrests just under the edge). Every base command retries once on 
 | 2026-10-09 | compositional_manipulation | O1 free-air test of the v3 arm moves | pre-grasp 0.3 mm, hands_up 1.7 mm | yes | synthetic bar 0.62 m ahead, no chair; see oc-hand-reach evidence |
 | 2026-10-10 | compositional_manipulation | C3 trial 2 steps (park) | parked left of the desk near the wall | no | v4 fixes made during this run (pre-grasp tolerance, wrist-roll relief by hand, joint release) |
 | 2026-10-10 | compositional_manipulation | C4 trial 2 steps (tuck) | tucked, square, centred within 2.5 cm | no | chair located by the agent (find picked another chair); routes from fresh frames; tuck with agent desk / bar values |
+| 2026-10-10 | compositional_manipulation | C5 trial 3 steps (park) | parked left of the desk near the wall | no | chair yawed 0.316 at the start (own align); joint pre-grasp (v5) after an OC 165 % stop; route pull 0.5 / turn +1.42 / drive 1.45 / turn -1.57, push 0.79 |
+| 2026-10-10 | compositional_manipulation | C6 trial 3 steps (tuck) | tucked, square (0.015 rad), centred within 4 cm | no | stance from the park odometry; pull 0.6 / turn -1.73 / drive 1.52 / turn +1.57; desk by pixel depth -> shift; tuck 1.49 0.551 |
 
 ![start](evidence/images/2026-10-09-M1-start.jpg)
 ![grasp](evidence/images/2026-10-09-M1-two-hand-grasp.jpg)
@@ -145,3 +156,5 @@ edge with the armrests just under the edge). Every base command retries once on 
 ![tucked (compositional C2)](evidence/images/2026-10-09-compose-tucked.jpg)
 ![parked (trial 2)](evidence/images/2026-10-10-compose2-parked-left.jpg)
 ![tucked (trial 2)](evidence/images/2026-10-10-compose2-tucked.jpg)
+![parked (trial 3)](evidence/images/2026-10-10-compose3-parked-left.jpg)
+![tucked (trial 3)](evidence/images/2026-10-10-compose3-tucked.jpg)

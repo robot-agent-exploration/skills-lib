@@ -101,8 +101,10 @@ def pick_cup(ctx, name, side, look=None, depth=G.RIM_DEPTH, carry_bottom=None, l
     End (ok): cup held fingers-down with its bottom at carry_bottom (default its rim + CARRY_CLEAR + one nest rise),
     measured.pinch for align_over. ok None: holding but the held check is unsure (checkpoint). ok False: hand open,
     back at the pre-grasp (or nothing moved; after a failed pre-grasp move, where the controller stopped it).
-    Reachability is decided by the controller: a refused / unreached optimal-control move is the failure."""
-    set_torso(ctx, 'mid', log=log)
+    Reachability is decided by the controller: a refused / unreached optimal-control move is the failure.
+    Torso: STACK_CUPS_TORSO (default mid). v4 (trial 3): a cup centred 0.33 m in front of the base is too close for
+    the fingers-down pinch at mid (wrist j5 at its limit margin, rby1_check refused) -> torso ready + base 0.10 back."""
+    set_torso(ctx, __import__('os').environ.get('STACK_CUPS_TORSO', 'mid'), log=log)
     loc = locate(ctx, [name], look=look, log=log)
     cup = loc['measured']['cups'][name]
     frames = list(loc['frames'])

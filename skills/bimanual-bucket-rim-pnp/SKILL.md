@@ -4,7 +4,7 @@ description: Pick a ~5-gallon plastic bucket (thin wall, wire bail handle) off t
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 3
+version: 4
 uses: [bimanual-box-pnp]
 ---
 
@@ -144,6 +144,15 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 9. IK window: STANCE_D >= 0.62 or rims below ~0.36 fail the pinch IK for the right arm with left offsets; the knee
    capsule needs the bucket >= 0.58 m ahead.
 
+- v4 (trial 3, 2026-10-10): `prepare` refused on the status' stale fault record (MinorFault cleared and re-armed
+  by the operator 20 min earlier; the controller itself read Enabled) -> did prepare by hand (grippers open, torso
+  mid, arms ready) and resumed at find_bucket; the check itself stays. The lift retry re-sent the torso once (as
+  designed). Standing with the bucket the wrist loads crept to 125 / 104 % (operator: "just move to the cabinet
+  instead of standing there"): plan the carry route BEFORE grasp_lift. `approach_edge` could not see the edge (the
+  held bucket hides it) -> new `edge_x` param (`--params '{"edge_x": X}'`): the agent measures the top / drawer
+  face beside the bucket by pixel depth. The cabinet outline from odometry was 0.1-0.25 m off after an hour:
+  re-measure it on the way. Never send a base drive and the next turn in one parallel batch: the drive (1.15 m >
+  1 m cap) was refused and the turn still ran in the wrong place (no contact).
 ## Evidence
 
 | Run | Date | Outcome | Unattended | Conditions |
@@ -153,6 +162,7 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 | C1 controller | 2026-10-09 | success with 2 interventions (fixed in code, not re-run) | no | bucket 0.79 m ahead, cabinet behind it |
 | 2026-10-09 | compositional_manipulation | B1 steps (run 20261009_221136_basket_pnp) | bucket (with cups + banana inside) on the cabinet's left unit, right unit left free for a box | no | lift at once after a wrist stop; world.held set by hand, edge_choice 0 |
 | 2026-10-10 | compositional_manipulation | B2 trial 2 steps (run 20261010_004716_basket_pnp) | bucket on the cabinet's end, rest free for the box | no | cabinet written by the agent (find_cabinet blind behind), lift retried after a 150 % stop |
+| 2026-10-10 | compositional_manipulation | B3 trial 3 steps (run 20261010_202414_basket_pnp) | bucket on the cabinet's near short end | no | trial 3: bucket with nested cups + banana onto the cabinet NEAR short end; prepare by hand (stale fault record); agent route + pixel-depth edge; touch 25/19 N |
 
 ![scene](evidence/images/m1_01_scene_bucket_left_of_cabinet.jpg)
 ![silhouette fit](evidence/images/m1_02_silhouette_fit_1p5m.jpg)
@@ -170,3 +180,4 @@ EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6
 ![C1 verify view](evidence/images/c1_07_verify_view.jpg)
 ![compositional B1: bucket on the cabinet, right unit free](evidence/images/2026-10-09-compose-bucket-on-cabinet.jpg)
 ![trial 2: bucket on the cabinet](evidence/images/2026-10-10-compose2-bucket-on-cabinet.jpg)
+![bucket on the cabinet (trial 3)](evidence/images/2026-10-10-compose3-bucket-on-cabinet.jpg)

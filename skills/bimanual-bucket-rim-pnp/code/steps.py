@@ -483,12 +483,22 @@ def held_center(rt):
     return np.mean(pts, axis=0)[:2]
 
 
-def approach_edge(rt, bucket_x=None):
+def approach_edge(rt, bucket_x=None, edge_x=None):
     """Straight approach until the held bucket's centre is EDGE_IN past the top's near edge (depth at table
-    height); the bumper keeps BUMPER_GAP from it."""
+    height); the bumper keeps BUMPER_GAP from it. edge_x: the agent's pixel-depth measurement of the near edge (base
+    frame) - v4 (trial 3, 2026-10-10): the held bucket hid the edge from the camera ('cabinet edge not seen ahead');
+    the drawer face / top edge beside the bucket gave it. One straight drive, capped by the bumper gap."""
     top_z = rt.world.objects['cabinet']['top_z']
     if bucket_x is None:
         bucket_x = float(held_center(rt)[0])
+    if edge_x is not None:
+        d = min(float(edge_x) + EDGE_IN - bucket_x, float(edge_x) - BUMPER_X - BUMPER_GAP)
+        rt.log(f'edge {float(edge_x):.3f} m ahead (agent) -> drive {d:+.3f}')
+        if d < -0.02 or d > 0.8:
+            raise StepFailed(f'agent edge {edge_x}: drive {d:+.3f} outside -0.02..0.8')
+        if d > 0.02:
+            rt.base(forward=float(d), slow=True)
+        return {'edge_x': round(float(edge_x) - max(d, 0.0), 3), 'source': 'agent'}
     for _ in range(3):
         edge, fid = _edge_ahead(rt, top_z)
         if edge is None:

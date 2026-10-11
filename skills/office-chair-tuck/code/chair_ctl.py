@@ -172,14 +172,30 @@ def arm_ik(ctx, targets, torso=TORSO_ZERO):
     return sol
 
 
-def move_arms_joint(ctx, targets, log=log_default, w_rot=5.0, tol_m=0.005):
+def move_arms_joint(ctx, targets, log=log_default, w_rot=5.0, tol_m=0.005, mode='oc'):
     """One or both hands to (pos, quat) in ONE whole-body optimal-control problem (oc-hand-reach.move_hands): the
     torso held where it is, a hand not listed held at its pose, elbow-down posture prior, waypoints within the
     per-call caps (<= 0.20 m, <= 0.35 rad). No local IK, no seed search (v4; the name is kept for callers).
     Tested 2026-10-09: both hands ready -> pitched pre-grasp shape in 3 calls / 23 s, 1.1 mm, 0.01 rad.
     -> oc result dict; raises RuntimeError when the controller refuses or stops."""
-    r = OC.move_hands(ctx, {side: {'pos': [float(v) for v in pos], 'quat': [float(v) for v in quat], 'w_rot': w_rot}
-                            for side, (pos, quat) in targets.items()}, tol_m=tol_m, log=log)
+    if mode == 'joint':
+        r = {'ok': False, 'why': 'mode joint (limit)'}
+    else:
+        r = OC.move_hands(ctx, {side: {'pos': [float(v) for v in pos], 'quat': [float(v) for v in quat],
+                                       'w_rot': w_rot} for side, (pos, quat) in targets.items()}, tol_m=tol_m, log=log)
+    if not r['ok'] and w_rot >= 1.0 and ('150%' in str(r['why']) or 'limit' in str(r['why'])):
+        # v5 (trial 3): the OC posture prior's first waypoint tripped left_arm_6 165 % in free air (as in trial 2's
+        # release / cups pre-grasp) -> one local IK solve from the stopped pose + a joint move (split <= 1.1 rad)
+        log(f"  optimal control stopped ({str(r['why'])[:120]}) -> IK + joint move")
+        sol = arm_ik(ctx, targets, torso=status(ctx)['torso'])
+        s = status(ctx)
+        cur = {k: np.array(s[f'{k}_arm']) for k in sol}
+        n = max(1, int(math.ceil(max(float(np.max(np.abs(np.array(sol[k]) - cur[k]))) for k in cur) / 1.1)))
+        for i in range(1, n + 1):
+            tg = {f'{k}_arm': {'positions': (cur[k] + (np.array(sol[k]) - cur[k]) * i / n).round(4).tolist()}
+                  for k in cur}
+            ctx.value('rby1_move_body', targets=tg)
+        return {'ok': True, 'fallback': 'ik_joint', 'joints': sol}
     if not r['ok']:
         raise RuntimeError(f"optimal-control move {sorted(targets)}: {r['why']}")
     return r
@@ -225,7 +241,9 @@ def grasp_bar(ctx, prof, log=log_default):
         ctx.value('rby1_gripper', side=side, action='open')
     # pre-grasp: both hands in one optimal-control problem (v4; v3 moved right then left by searched-seed IK).
     # Two hands + posture prior settle 5-7 mm off (2026-10-09 trial 2): accept 12 mm, the descent is absolute.
-    move_arms_joint(ctx, {k: (T[k]['pre'], T[k]['quat']) for k in ('right', 'left')}, log=log, tol_m=0.012)
+    # v5 (trial 3): OC tripped left_arm_6 165 % here -> pre-grasp by one IK solve + joint move (mode='joint')
+    move_arms_joint(ctx, {k: (T[k]['pre'], T[k]['quat']) for k in ('right', 'left')}, log=log, tol_m=0.012,
+                    mode='joint')
     base = wrist(status(ctx))
     # descend along each hand's finger direction (+ the PRE_UP) in two translation steps to ABSOLUTE targets
     for i in (1, 2):
