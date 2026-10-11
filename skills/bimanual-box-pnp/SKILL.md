@@ -4,7 +4,7 @@ description: Pick and place a closed cardboard box (~0.40 x 0.22 x 0.26 m, ~1.4 
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 3
+version: 4
 ---
 
 # Bimanual box pick-and-place (floor <-> table)
@@ -162,6 +162,11 @@ P2 without a false stop.
    the held box itself adds ~20 "obstacle" points as soon as the swept base reaches its image position: tell them
    from real obstacles by checking the legs separately and looking at the points.
 
+- v4 (trial 3, 2026-10-10): `prepare` refused on a stale fault record (as in the bucket skill) -> closed the
+  grippers + torso ready by hand, resumed at find_box. Next to a bucket standing on one end of a 0.9 m top, the
+  far short edge needed a 180 deg turn in unseen space and its straight route cut the cabinet corner -> placed from
+  the LONG side onto the free far half (0.54 m free for the 0.375 m box: ~8 cm each side). The held box hides the
+  near top: measure the drawer face below it by pixel depth (0.60 -> edge_x 0.59), then approach_table + place.
 ## Evidence
 
 | Run | Date | Task | Outcome | Unattended | Conditions |
@@ -170,6 +175,7 @@ P2 without a false stop.
 | P2 | 2026-10-09 | floor_to_table | success (agent fixed the edge measurement) | no | box on the floor 0.67 m ahead, island ~1 m ahead |
 | P3 | 2026-10-09 | floor_to_table | success (agent planned the carry route, measured the edge, side-stepped) | no | compositional session: box ~1.6 m beside the robot; grasp + lift chained without a pause (no time bent over); target = the free one of two dark-top drawer units (the other held a bucket), approached from its free side |
 | P4 | 2026-10-10 | floor_to_table | success (agent route around the cabinet, edge from pixel depth + odometry, skill verify crashed -> fixed) | no | compositional trial 2: box 1.5 m ahead on the floor, placed on the free end of the bucket's cabinet from its short edge |
+| P5 | 2026-10-10 | floor_to_table | success | no | trial 3: floor -> cabinet free far half from the long side, 9 cm from the bucket; find / plan / drive / check_stance x2, grasp + lift chained; edge_x 0.59 by pixel depth; touch -4.4 N |
 
 ![P1 box on the table](evidence/images/p1_01_box_on_table_find_box.jpg)
 ![P1 plan with a straight final leg](evidence/images/p1_02_plan_stance_straight_leg.jpg)
@@ -184,3 +190,4 @@ P2 without a false stop.
 ![P3 lifted](evidence/images/p3_02_lifted.jpg)
 ![P3 placed on the free cabinet next to the bucket](evidence/images/p3_03_placed_on_free_cabinet.jpg)
 ![P4 box placed next to the bucket (trial 2)](evidence/images/2026-10-10-compose2-box-next-to-bucket.jpg)
+![box next to the bucket (trial 3)](evidence/images/2026-10-10-compose3-box-next-to-bucket.jpg)

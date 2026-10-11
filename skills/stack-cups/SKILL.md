@@ -4,7 +4,7 @@ description: Stack one upright open cup into another on a desk with a one-hand f
 status: draft
 robot: Rainbow RB-Y1
 entry: code/run.py
-version: 3
+version: 4
 uses: [office-chair-tuck, oc-hand-reach]
 ---
 
@@ -71,6 +71,10 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 `CARRY_CLEAR` 0.06 (0.018 knocked the target cup), `ALIGN_TOL` 0.012, `CONTACT_N` 5, `NEST_RISE` 0.024.
 `offline_cups.py` re-runs the perception on recorded frames (needs that session's `runtime/frames`).
 
+Trial-3 additions: `pick_staged.py pre|down|close` (staged rim pick, agent looks between; hands the held cup to
+`run_cups.py align/insert` through output/cup_state.json) and `banana_pick.py pre|down|close` (banana at its
+middle, closing across the tangent, fingers tilted along it). pp_cups.pick_cup takes STACK_CUPS_TORSO (default mid).
+
 ## Checks
 - scan: both cups located, 0.04 < r < 0.055, lip centre within 1.5 cm of the depth rim-band centre.
 - pick: closed width < 6 mm (thin wall), held check 'held' (lowest point >= desk + 2.5 cm); approach force < 5 N.
@@ -131,6 +135,20 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 - A Cartesian approach with the torso leaned 0.10 rad put the controller in MinorFault (operator cleared it): the
   skill does not lean; cups out of reach are reported.
 
+- v4 (trial 3, 2026-10-10): a cup centred 0.33 m in front of the base was refused at torso `mid` (left wrist j5 at
+  its limit margin; the skill's rise-first had pushed left_arm_5 to 1.87). Operator: "check the torso and height
+  against previous skills" -> torso `ready` (STACK_CUPS_TORSO=ready) and the base 0.10 m back. The one-shot pick
+  pinched 2.4 cm and slipped off the rim, moving the cup 4 cm -> `pick_staged.py` (locate with the hand out of view:
+  a hand hovering over the cup merged into its mask, rim 0.97 / height 0.23; pinch 4 cm deep; look before the
+  descent and before closing). The align over the target failed IK at ready (12.9 mm) -> torso `zero` + chest yaw
+  -0.2 (exact, j5 1.54). Alignment: the skill's depth offset (lowest held points) read 2-3 cm where the agent's wall
+  measurement read ~1 cm (a cup held 6 cm above the rim looks centred in the image while 4 cm nearer the camera:
+  parallax) -> nudged to 4 mm. The Cartesian insert descent at torso zero (left elbow near straight, j3 -0.41) put
+  the controller in MinorFault TWICE -> operator re-arm; released with the held bottom already 2-4 cm inside the rim
+  (it slid in), lifted out by a joint move (FK path < 5 mm off vertical). A move-to-clear IK from ready flipped the
+  left shoulder (j1 2.37): skip it (CUP_CLEAR=0) and recover by split joint moves to ready. Banana: fingers straight
+  down put the right arm at full stretch -> `banana_pick.py` (middle + tangent, fingers tilted -0.30 along the
+  banana: every joint with margin). Stack pick (left, 4.5 cm deep, 7 mm) worked at torso ready + chest yaw -0.2.
 ## Evidence
 | date | session | run | outcome | unattended | conditions |
 |---|---|---|---|---|---|
@@ -139,6 +157,7 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 | 2026-10-09 | push_chair_4ab505 | offline perception (final code) | 8/10 single checks (failure); 0 wrong automatic decisions with the depth AND Gemini gates | yes | recorded frames: locate 2/2, align depth 2/3, Gemini 2/3, held 3/3, nested 1/2 |
 | 2026-10-09 | compositional_manipulation | S1 steps by the agent (v1 code + look_at fallback) | nested | no | two silver cups on the light-wood desk, left hand; align interrupted once (held cup taken as target, restored) |
 | 2026-10-10 | compositional_manipulation | S2 trial 2 steps (joint mode) | nested | no | left hand, chest yaw -0.3 for the align; skill nested check false negative, agent zoom = nested |
+| 2026-10-10 | compositional_manipulation | S3 trial 3 steps (agent in the loop) | success | no | trial 3: front cup (0.33, -0.05) into the back-left cup (0.45, 0.18), left hand; torso ready + back 0.10, staged pick 4 cm deep, align at torso zero + chest yaw -0.2, nudged to 4 mm, released inside the rim after 2 MinorFaults on the descent |
 
 ![start](evidence/images/2026-10-09-C2-start.jpg)
 ![alignment checkpoint](evidence/images/2026-10-09-C2-align-checkpoint.jpg)
@@ -149,3 +168,4 @@ Parameters (tested): `RIM_DEPTH` 0.024, `CUP_RIM_IN` 0.004, `CLOSE_A` 0.5, `LIFT
 ![gemini masks](evidence/images/2026-10-09-offline-gemini-masks-desk.jpg)
 ![compositional S1: two cups nested](evidence/images/2026-10-09-compose-two-nested.jpg)
 ![trial 2: two nested cups (zoom)](evidence/images/2026-10-10-compose2-two-nested-zoom.jpg)
+![nested (trial 3)](evidence/images/2026-10-10-compose3-nested.jpg)
