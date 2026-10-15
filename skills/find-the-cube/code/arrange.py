@@ -12,9 +12,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path.cwd()))                       # workspace root (api/)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import controller as C  # noqa: E402
+from find_the_cube import controller as C  # noqa: E402
 
-from find_the_cube_params import ROW_X, ROW_Y  # hyper-parameters: find_the_cube_params.py
+from find_the_cube.params import ROW_X, ROW_Y  # hyper-parameters: find_the_cube/params.py
 
 
 def place_object(ctx, xy):

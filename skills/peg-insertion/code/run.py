@@ -42,15 +42,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 
-import board  # noqa: E402
-import fitpeg  # noqa: E402
-import insert as insert_mod  # noqa: E402
-import l3_tilt_insert  # noqa: E402
-import motion  # noqa: E402
-import register  # noqa: E402
-import step as step_mod  # noqa: E402
-from geom import load_frame, project, rgb  # noqa: E402
-from plan import quat  # noqa: E402
+from peg_insertion import board  # noqa: E402
+from peg_insertion import fitpeg  # noqa: E402
+from peg_insertion import insert as insert_mod  # noqa: E402
+from peg_insertion import l3_tilt_insert  # noqa: E402
+from peg_insertion import motion  # noqa: E402
+from peg_insertion import register  # noqa: E402
+from peg_insertion import step as step_mod  # noqa: E402
+from peg_insertion.geom import load_frame, project, rgb  # noqa: E402
+from peg_insertion.plan import quat  # noqa: E402
 
 
 class _Tee:

@@ -26,16 +26,16 @@ import traceback
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))       # sibling modules: motions, perception, steps, tissues
+sys.path.insert(0, str(HERE))       # code/: the swipe_table package (motions, perception, steps, tissues)
 
 import numpy as np
 
-import motions as M
-import perception as P
-import steps as S
-import tissues as T
+from swipe_table import motions as M
+from swipe_table import perception as P
+from swipe_table import steps as S
+from swipe_table import tissues as T
 
-from swipe_table_params import (  # hyper-parameters: swipe_table_params.py
+from swipe_table.params import (  # hyper-parameters: swipe_table/params.py
     SHEETS_PER_PASS, PAPER_CONTROLLER_MAX_PASSES as MAX_PASSES, STAIN_MARGIN, RESIDUE_MARGIN,
     VERIFY_ROI_MARGIN, CLEAN_AREA_M2, CLEAN_WRIST_M2, STAIN_PRESENT_M2, STAIN_PRESENT_NOREF_M2, STAIN_ROI,
     POUR_ASKS, BOX_MOVED_M, LEFTOVER_RISE_M, LEFTOVER_MIN_M2, MAX_LEFTOVER_PICKS, STORED_REFERENCE,

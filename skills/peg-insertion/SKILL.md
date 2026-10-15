@@ -149,9 +149,9 @@ robot**. `steps` is a list of `{'step': name, ...params}`. The wrapper runs them
 - `Fb`/`Mb`: measured each time.
 - `target_depth`: 0.019.
 
-The session ran the same functions from the shell, from the workspace root:
-`python3 -u <skill>/code/step.py hop '{"xy":[x,y],"z_surf":z,"yaw_deg":psi}'` and
-`python3 -u <skill>/code/l3_tilt_insert.py '<json>'`. `fitpeg.py FRAME SHAPE X Y Z_TOP` is a CLI too.
+The session ran the same functions from the shell, from the workspace root (now with `<skill>/code` on `PYTHONPATH`):
+`python3 -u -m peg_insertion.step hop '{"xy":[x,y],"z_surf":z,"yaw_deg":psi}'` and
+`python3 -u -m peg_insertion.l3_tilt_insert '<json>'`. `python3 -m peg_insertion.fitpeg FRAME SHAPE X Y Z_TOP` is a CLI too.
 
 Modules:
 - `geom` (frames, projection), `board` + `board_model.json` (CAD geometry in the board frame), `register`
@@ -196,7 +196,7 @@ session's saved frames, `register` and `fit_peg` reproduce the session's numbers
 - `fit_peg` rectangle: (0.4630, 0.2155), 86.6 deg.
 - `fit_peg` triangle: 23.2 deg, polarity -1. This is wrong, as the session's fit was.
 
-**Hyper-parameters** are in one list, `code/peg_insertion_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. None depends on the setup: the board is registered from the cameras on every run. The board model stays in `board_model.json`.
+**Hyper-parameters** are in one list, `code/peg_insertion/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. None depends on the setup: the board is registered from the cameras on every run. The board model stays in `board_model.json`. The modules are the package `code/peg_insertion/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `peg_insertion` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m peg_insertion.<module>`.
 
 ## Checks
 - **Registration:** every outline lies on its hole in the overlay, and the score peak is sharp (+-0.5 deg). The L1

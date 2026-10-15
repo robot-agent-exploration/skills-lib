@@ -6,7 +6,7 @@ Board frame: origin at the board centre on its top face, x along the 320 mm side
 Offline tool (no robot). Input: nist_atb_m1.stl (units cm) of the ManipulationNet peg-in-hole board,
 https://github.com/ManipulationNet/mnet_client, branch ros_2, assets/peg_in_hole/cad_files/
 (2.7 MB, not shipped with the skill). Usage: python3 export_board_model.py nist_atb_m1.stl board_model.json
-The shipped ../board_model.json also has per-peg 'outline' / 'area_m2' entries, added in the session by a
+The shipped ../peg_insertion/board_model.json also has per-peg 'outline' / 'area_m2' entries, added in the session by a
 one-off command that sliced each peg STL of the same folder at z = 2.5 cm (see SKILL.md, ## Code).
 """
 import json

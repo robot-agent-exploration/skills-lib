@@ -176,7 +176,8 @@ Tested constants (unchanged from the session): `CARRY_Z` 0.45, `LOWER_Z` 0.16, `
 Changes from the session's code (no algorithm, motion or threshold changed):
 - `code/wipe/{controller,steps,motions,perception}.py` (HEAD 6142c56) and `code/paper/{controller,tissues}.py` (HEAD
   af5a7f5) flattened into `code/`; `paper/controller.py` renamed `paper_controller.py`; sibling imports put the module's
-  own folder on `sys.path` (`steps.py`, `tissues.py`) instead of `code/wipe`.
+  own folder on `sys.path` (`steps.py`, `tissues.py`) instead of `code/wipe`; since 2026-10-15 the helpers are the
+  package `code/swipe_table/` and import each other relatively.
 - Both entries: the session's `main` (returns the report dict) renamed `run_logged`; a new `main(ctx, ...)` wraps it to
   `{ok, measured, why}`. Run logs `output/runs/...` and frames `runtime/frames/...` are now relative to the working
   directory (they were `<workspace>/...` via `__file__`; the session always ran from the workspace root, so the same
@@ -190,9 +191,9 @@ Changes from the session's code (no algorithm, motion or threshold changed):
 - Caveat: module names are generic (`steps`, `motions`, `perception`, `controller`); a process that also imports another
   skill's module of the same name gets whichever was imported first.
 
-**Changed since the session's runs:** `main` in `controller.py` and `paper_controller.py` is a new wrapper around the session's entry (renamed `run_logged`) that returns `{ok, measured, why}`. Log and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/swipe_table_params.py` (2026-10-15).
+**Changed since the session's runs:** `main` in `controller.py` and `paper_controller.py` is a new wrapper around the session's entry (renamed `run_logged`) that returns `{ok, measured, why}`. Log and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/swipe_table/params.py` (2026-10-15).
 
-**Hyper-parameters** are in one list, `code/swipe_table_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`STORED_REFERENCE`, `Z_FLOOR`, `STAIN_ROI`, `TABLE_Z`, `MAP_X`, `MAP_Y`, `CARRY_Z`, `LOWER_Z`, `SAFE_Z`, `MAX_SEG`, `PINCH_PRESS_Z`, `PATH_X`, `PATH_Y`, `CARRY_MAX_X`, `CARRY_MAX_Y`, `HOME_JOINTS`, `CONTACT_PROBE_Z`, `GRASP_X`, `GRASP_Y`, `PULL_Z`, `DROP_Z`, `TRAVEL_Z`); each comment says how to measure it.
+**Hyper-parameters** are in one list, `code/swipe_table/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`STORED_REFERENCE`, `Z_FLOOR`, `STAIN_ROI`, `TABLE_Z`, `MAP_X`, `MAP_Y`, `CARRY_Z`, `LOWER_Z`, `SAFE_Z`, `MAX_SEG`, `PINCH_PRESS_Z`, `PATH_X`, `PATH_Y`, `CARRY_MAX_X`, `CARRY_MAX_Y`, `HOME_JOINTS`, `CONTACT_PROBE_Z`, `GRASP_X`, `GRASP_Y`, `PULL_Z`, `DROP_Z`, `TRAVEL_Z`); each comment says how to measure it. The modules are the package `code/swipe_table/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `swipe_table` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m swipe_table.<module>`.
 
 ## Checks
 
