@@ -92,34 +92,24 @@ call sub-task skills and declare them in `uses:`.
 
 ## 3. Make skills modular, so new tasks can compose them
 
-A skill is reused on the **same robot** in setups its author never saw: the cameras moved,
-recalibrated or replaced, another room, surface or layout, other objects of the same kind,
-and other tasks that call it as one step. Write every skill so that a later session can
-reuse its pieces for a task nobody has seen yet: "pick a box from the floor" should serve
-"put the box on a shelf", "hand the box to a person" and "stack two boxes" without being
-rewritten.
+A skill is reused on the **same robot** in setups its author never saw: other camera
+placements and calibrations, other rooms, surfaces and layouts, other objects of the same
+kind, and other tasks that call it as one step. Write every skill so that a later session
+can reuse its pieces for a task nobody has seen yet: "pick a box from the floor" should
+serve "put the box on a shelf", "hand the box to a person" and "stack two boxes" without
+being rewritten.
 
-**Keep only the manipulation logic; take perception and control parameters as inputs.**
-The skill holds what stays the same across setups: the order of steps, the motion and
-contact strategy written in the object's or target's frame (standoffs, approach
-directions, grasp offsets, lift heights), and the checks between steps. Everything that
-depends on the setup comes in as an input:
+**Keep the manipulation logic; take the setup from the harness.** The skill holds what
+carries over: the steps, the motion and contact strategy in the object's or target's
+frame, and the checks between steps. The environment setup (camera parameters, the
+robot's postures, limits and workspace) is read from the harness at run time, never copied
+from the session that wrote the skill; what the harness does not provide is measured or
+passed in.
 
-- **perception parameters**: camera intrinsics and poses are read from each frame's
-  metadata at run time, never stored in the skill; image regions come from projecting
-  base-frame regions through them, and thresholds are in metric units, not pixels; no
-  stored frame ids, reference images or calibration corrections. Objects, surfaces and
-  obstacles come from a perception function the skill ships with and a caller may replace,
-  or from the agent's own verified observation;
-- **control parameters**: object poses and sizes, surface heights, view and approach poses,
-  speeds, forces and tolerances are arguments, with the tested values as defaults and
-  their tested ranges listed in `## Code`;
-- before contributing, look for constants that held only in the session's setup (pixel
-  coordinates, a camera chosen for where it stood, positions measured once) and turn each
-  into an input;
-- `## When to use` and each run's `conditions` say which setups were tested (camera
-  placement, scene, objects, task), so a later session knows how far the skill has been
-  shown to transfer.
+**Keep hyper-parameters in one list**, separate from the logic (for example
+`code/params.py`), each with what it controls, its unit, its tested range and how it was
+set, so a new task or setup knows where to adjust it. Say in `## When to use` and in each
+run's `conditions` which setups were tested.
 
 **Cut the task into primitives**: perception (frame -> pose and size), positioning (reach
 pose), grasping, transport, placing, release and retreat. Split where the robot is in a
@@ -253,9 +243,9 @@ The code:
 - re-localizes everything it acts on from fresh observations;
 - checks its preconditions first and stops with `ok: False` and a clear `why` when one
   fails; checks each step before the next; ends in a safe state on failure;
-- uses the robot only through `ctx` (the session's tools); named constants with their
-  tested ranges at the top; no absolute paths, no credentials; only the agent
-  environment's packages;
+- uses the robot only through `ctx` (the session's tools) and reads the setup from it;
+  hyper-parameters in their one list (section 3); no absolute paths, no credentials; only
+  the agent environment's packages;
 - returns `{"ok": bool, "measured": {...}, "why": str}`.
 
 Each line of `evidence/runs.jsonl` (append; never rewrite another contributor's lines):
@@ -361,8 +351,8 @@ Sessions that ran before this library existed kept their procedures in the sessi
 - keep the code as it ran on the robot; limit refactoring to what the format needs (paths,
   an entry wrapper, removing one-off scripts) and say in `## Code` what changed since the
   runs;
-- list in `## Code` the constants that still tie the code to the session's setup (section
-  3), so a later contributor can turn them into inputs;
+- note in `## Code` what still depends on the session's setup and where the
+  hyper-parameters are (section 3);
 - take the runs from the session's records into `evidence/runs.jsonl` with
   `"commit": "pre-library"` and frames from the session as images;
 - set the status from that evidence: runs of code that has since changed do not count
