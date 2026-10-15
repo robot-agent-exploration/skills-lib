@@ -14,7 +14,8 @@ any contributor: an agent session, a harness that merges sessions, or a person.
   `franka` (Franka FR3, one arm) and `rby1` (Rainbow RB-Y1, mobile, two arms). A skill is
   written for one embodiment: its code calls that robot's tools and its evidence comes from
   that robot. A procedure that also works on another robot is contributed again on that
-  robot's branch, with that robot's evidence.
+  robot's branch, with that robot's evidence. A robot without a branch gets one through
+  [NEW_ROBOT.md](NEW_ROBOT.md).
 - Every embodiment branch has the same layout, which is also the layout of the harness's
   local library, so a branch can be cloned straight into the harness:
 
@@ -274,7 +275,7 @@ Before committing, run the checker on your checkout of the embodiment branch:
 
 ```bash
 curl -sO https://raw.githubusercontent.com/robot-agent-exploration/skills-lib/main/scripts/check_skills.py
-python3 check_skills.py . --base origin/<embodiment>    # only what you changed, plus the contribution rules
+python3 check_skills.py . --base upstream/<embodiment>  # only what you changed, plus the contribution rules
 python3 check_skills.py .                               # the whole library
 ```
 
@@ -282,24 +283,30 @@ python3 check_skills.py .                               # the whole library
 
 A contribution changes only `INDEX.md` and files under `skills/`, and deletes no skill.
 
-**From a session or by hand (GitHub):**
+**From a session or by hand (GitHub).** Fork the repository on GitHub, then work on a
+branch of your fork that starts from the embodiment branch (a fork copies only `main` by
+default, so take the embodiment branch from `upstream`):
 
 ```bash
-git clone -b <embodiment> https://github.com/robot-agent-exploration/skills-lib.git
-cd skills-lib
-git checkout -b contrib/<embodiment>/<session-or-topic>
+git clone https://github.com/<you>/skills-lib.git && cd skills-lib
+git remote add upstream https://github.com/robot-agent-exploration/skills-lib.git
+git fetch upstream
+git checkout -b contrib/<embodiment>/<session-or-topic> upstream/<embodiment>
 # add or change skills/<slug>/ and its INDEX.md row
 git add -A && git commit -m "<slug>: what changed"
-git fetch origin && git merge origin/<embodiment>     # take in other merges; resolve conflicts
-python3 check_skills.py . --base origin/<embodiment>
+git fetch upstream && git merge upstream/<embodiment>     # take in other merges; resolve conflicts
+python3 check_skills.py . --base upstream/<embodiment>
 git push -u origin contrib/<embodiment>/<session-or-topic>
 ```
 
-Then open a pull request into `<embodiment>` (never into `main`). The workflow runs the
-checker on it. Pull requests are merged with a **merge commit**, not squashed or rebased,
-so each session's commits and evidence stay in the history.
+Then open a pull request from that branch into `<embodiment>` of
+`robot-agent-exploration/skills-lib` (never into `main`). The workflow runs the checker on
+it; a first-time contributor's run waits for a maintainer's approval. Pull requests are
+merged with a **merge commit**, not squashed or rebased, so each session's commits and
+evidence stay in the history. Maintainers may push `contrib/` branches to this repository
+directly instead of a fork.
 
-On a conflict, merge `origin/<embodiment>` into your branch, keep **both** sides'
+On a conflict, merge `upstream/<embodiment>` into your branch, keep **both** sides'
 `runs.jsonl` lines, reconcile the text (the higher `version` wins only when its evidence
 supports it), and commit.
 
@@ -310,11 +317,12 @@ supports it), and commit.
 to publish what the sessions learned:
 
 ```bash
-git clone -b <embodiment> -o skills-lib https://github.com/robot-agent-exploration/skills-lib.git \
+git clone -b <embodiment> -o upstream https://github.com/robot-agent-exploration/skills-lib.git \
     runtime/skill-library/<robot>
 git -C runtime/skill-library/<robot> checkout -b main
 # ... sessions run and merge ...
-git -C runtime/skill-library/<robot> push skills-lib main:contrib/<embodiment>/<lab-or-date>
+git -C runtime/skill-library/<robot> remote add fork https://github.com/<you>/skills-lib.git
+git -C runtime/skill-library/<robot> push fork main:contrib/<embodiment>/<lab-or-date>
 ```
 
 and open a pull request into `<embodiment>` as above. The harness's merge commits
@@ -339,14 +347,10 @@ Sessions that ran before this library existed kept their procedures in the sessi
 - set the status from that evidence: runs of code that has since changed do not count
   toward `verified`.
 
-## 7. Adding an embodiment
+## 7. Adding a robot
 
-Create an orphan branch named after the robot's backend key (`franka`, `rby1`, ...), with
-a `README.md` that describes the robot and its interface (arms, gripper, cameras, the
-tools the code calls, and where it came from), an `INDEX.md` with the table header, an
-empty `skills/`, and `.github/workflows/check-skills.yml` copied from an existing
-embodiment branch. Add the branch to the table in [README.md](README.md) on `main`.
-
-```bash
-git switch --orphan <embodiment>
-```
+A robot without a branch starts with an issue: a maintainer creates its branch from
+[`templates/robot-branch/`](templates/robot-branch/) with
+[`scripts/new_robot_branch.sh`](scripts/new_robot_branch.sh), and the first skills come in
+by pull request as in section 5. The steps, and when a robot needs its own branch, are in
+[NEW_ROBOT.md](NEW_ROBOT.md).

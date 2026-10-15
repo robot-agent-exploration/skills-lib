@@ -87,7 +87,8 @@ A skill's status follows its evidence:
 so new tasks can compose them, the format and evidence rules, and how to commit and merge
 into an embodiment branch. Check a contribution with
 [`scripts/check_skills.py`](scripts/check_skills.py) before opening a pull request; the
-embodiment branches run it on every push and pull request.
+embodiment branches run it on every push and pull request. To bring a robot that has no
+branch yet, follow [NEW_ROBOT.md](NEW_ROBOT.md).
 
 ## 📝 Citation
 
