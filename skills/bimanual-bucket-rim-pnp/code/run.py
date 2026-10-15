@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-import controller  # noqa: E402
+from bimanual_bucket_rim_pnp import controller  # noqa: E402
 
 
 def main(ctx, start=None, resume=None, checkpoints=True, params=None, stop_after=None):

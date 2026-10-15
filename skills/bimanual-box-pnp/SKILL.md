@@ -39,7 +39,7 @@ its swept footprint; a reverse only along the straight path just driven (+3 cm o
 
 ## Procedure
 
-Module map (`code/boxpnp/`):
+Module map (`code/bimanual_box_pnp/`):
 
 | Module | What |
 |---|---|
@@ -99,7 +99,7 @@ touchdown by force). The mask polygon comes back as
 asks for [x, y] (4/4 answers, test 2026-10-09); `segment` decides the order per answer by containment in box_2d. Gemini calls are serialized with
 robot calls by the host: ask between motions.
 
-**Hyper-parameters** are in one list, `code/boxpnp/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`BALL_D`, `TORSO_READY`, `ARM_READY`, `MAX_FORWARD_CALL`, `TORSO_MAX_STEP`, `MAX_LOAD`, `CARRY_Z`); each comment says how to measure it.
+**Hyper-parameters** are in one list, `code/bimanual_box_pnp/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`BALL_D`, `TORSO_READY`, `ARM_READY`, `MAX_FORWARD_CALL`, `TORSO_MAX_STEP`, `MAX_LOAD`, `CARRY_Z`); each comment says how to measure it. The modules are the package `code/bimanual_box_pnp/` (renamed from `boxpnp` on 2026-10-15 so that a package name is the skill's slug): import it as `bimanual_box_pnp` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m bimanual_box_pnp.<module>`.
 
 ## Checks
 

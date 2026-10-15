@@ -7,10 +7,10 @@ black-top drawer cabinet next to the cardboard box. Closed-finger "ball" squeeze
 ## Run
 
 ```
-python3 code/basket_pnp/controller.py                                    # runs to the first checkpoint
-python3 code/basket_pnp/controller.py --resume output/runs/<run> --start <next>
-python3 code/basket_pnp/controller.py --resume output/runs/<run> --start plan_grasp_approach --params '{"heading_offset": 1.57}'
-MPLCONFIGDIR=$TMPDIR python3 code/basket_pnp/offline_test.py              # no robot: IK, knee, route, silhouette
+python3 skill-library/skills/bimanual-bucket-rim-pnp/code/run.py           # runs to the first checkpoint
+python3 skill-library/skills/bimanual-bucket-rim-pnp/code/run.py --resume output/runs/<run> --start <next>
+python3 skill-library/skills/bimanual-bucket-rim-pnp/code/run.py --resume output/runs/<run> --start plan_grasp_approach --params '{"heading_offset": 1.57}'
+MPLCONFIGDIR=$TMPDIR python3 skill-library/skills/bimanual-bucket-rim-pnp/code/offline_test.py   # no robot: IK, knee, route, silhouette
 ```
 
 Every run writes `output/runs/<time>_basket_pnp/` (log.txt, report_*.json, world.json, plan_*.png, overlays).

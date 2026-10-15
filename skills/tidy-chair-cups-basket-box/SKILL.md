@@ -99,7 +99,7 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 `chair_route.py`, `drop.py`. CLI: `python3 skill-library/skills/tidy-chair-cups-basket-box/code/run.py <step>
 '<json args>'`.
 
-**Hyper-parameters** are in one list, `code/tidy_chair_cups_basket_box_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. The steps' own hyper-parameters are in the skills it uses.
+**Hyper-parameters** are in one list, `code/tidy_chair_cups_basket_box/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. The steps' own hyper-parameters are in the skills it uses. The modules are the package `code/tidy_chair_cups_basket_box/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `tidy_chair_cups_basket_box` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m tidy_chair_cups_basket_box.<module>`. Its `__init__.py` puts the code of the skills it imports (office-chair-tuck, oc-hand-reach, bimanual-box-pnp) on `sys.path`, so modules import them as packages too.
 
 ## Checks
 

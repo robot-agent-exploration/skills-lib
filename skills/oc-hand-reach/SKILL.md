@@ -51,9 +51,9 @@ joint within 0.03 rad of its limit), torque (150 %) and self-collision while it 
 ## Code
 
 ```python
-import importlib.util
-spec = importlib.util.spec_from_file_location('oc_reach', 'skill-library/skills/oc-hand-reach/code/oc_reach.py')
-O = importlib.util.module_from_spec(spec); spec.loader.exec_module(O)
+import sys
+sys.path.insert(0, 'skill-library/skills/oc-hand-reach/code')   # another skill: list oc-hand-reach in its __init__.py
+from oc_hand_reach import oc_reach as O
 r = O.move_hands(ctx, {'right': {'pos': [0.52, -0.10, 1.05], 'quat': O.quat_yaw_pitch(-0.17, -0.785)},
                        'left':  {'pos': [0.52, 0.10, 1.05], 'quat': O.quat_yaw_pitch(0.17, -0.785)}})
 # or the entry: run.main(ctx, targets={'right': {'pos': [...], 'yaw': -0.17, 'pitch': -0.785}})
@@ -71,7 +71,7 @@ Helpers: `quat_yaw_pitch(yaw, pitch)` (R = Rz(yaw) Ry(pitch), fingers along ee -
 (closed-form yaw from the shoulder towards a point, via `rby1_fk`), `slerp`, `R_from_quat`, `quat_from_R`.
 Users: office-chair-tuck v4 (`move_arms_joint`, `hands_up`, measure pose), stack-cups, bimanual-bucket-rim-pnp.
 
-**Hyper-parameters** are the constants at the top of `code/oc_reach.py` (`NATURAL`, `PRIOR`, `CAP_M`, `CAP_RAD`). They stay in that module because other skills load it by file path. `CAP_M` and `CAP_RAD` copy the backend's per-call caps: check them against robot-interface.
+**Hyper-parameters** are in one list, `code/oc_hand_reach/params.py` (`NATURAL`, `PRIOR`, `CAP_M`, `CAP_RAD`); `oc_reach.py` imports them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`CAP_M`, `CAP_RAD`: they copy the backend's per-call caps; check them against robot-interface). The modules are the package `code/oc_hand_reach/` (moved there on 2026-10-15; only the imports changed): import it as `oc_hand_reach` with `code/` on `sys.path`.
 
 ## Checks
 

@@ -4,15 +4,12 @@
 
 Steps: find | approach [plan] | desk | measure | square | grasp | transport [pull] [plan] | pull <m> | turn_to <yaw> | drive <m> | tuck | release | verify.
 """
-import importlib.util
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-_spec = importlib.util.spec_from_file_location('office_chair_run_tuck', HERE / 'run_tuck.py')
-_rt = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_rt)
+from office_chair_tuck import run_tuck as _rt  # noqa: E402
 
 
 def main(ctx, step='verify', args=(), log=print):

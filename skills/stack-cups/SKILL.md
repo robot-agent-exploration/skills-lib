@@ -75,7 +75,7 @@ Trial-3 additions: `pick_staged.py pre|down|close` (staged rim pick, agent looks
 `run_cups.py align/insert` through output/cup_state.json) and `banana_pick.py pre|down|close` (banana at its
 middle, closing across the tangent, fingers tilted along it). pp_cups.pick_cup takes STACK_CUPS_TORSO (default mid).
 
-**Hyper-parameters** are in one list, `code/stack_cups_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TIP`, `TORSO_POS`, `TIP_LOW`, `GRIP_C`, `OPEN_HALF`, `REACH_M`); each comment says how to measure it.
+**Hyper-parameters** are in one list, `code/stack_cups/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TIP`, `TORSO_POS`, `TIP_LOW`, `GRIP_C`, `OPEN_HALF`, `REACH_M`); each comment says how to measure it. The modules are the package `code/stack_cups/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `stack_cups` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m stack_cups.<module>`. Its `__init__.py` puts the code of the skills it imports (office-chair-tuck, oc-hand-reach) on `sys.path`, so modules import them as packages too.
 
 ## Checks
 - scan: both cups located, 0.04 < r < 0.055, lip centre within 1.5 cm of the depth rim-band centre.
@@ -115,7 +115,7 @@ middle, closing across the tangent, fingers tilted along it). pp_cups.pick_cup t
   only the 0.69 m reach rule rejects) and every hand move is the controller's optimal control
   (`pp_motion.move_arm` = `move_arm_oc` via oc-hand-reach; `ARM_MODE = 'joint'` restores v1). The v1 search over
   rim angles x pitches x yaws with local IK is kept as `plan_rim_search` (unused). Offline self-test
-  (`python3 code/pp_grasp.py`): every closed-form pose reachable by the local-IK oracle (0.0-2.8 mm). NOT yet run
+  (`python3 -m stack_cups.pp_grasp`): every closed-form pose reachable by the local-IK oracle (0.0-2.8 mm). NOT yet run
   on the robot with v2: watch the first pre-grasp and lift.
 - The head could not point at a cup far to the side ("cannot point", pan limit 0.473): `pp_motion.look_at` now
   clamps the pan to +-0.44 at the same range and height (compositional session).
