@@ -8,12 +8,10 @@ from ..core.runner import StepFailed
 
 from . import squeeze
 
-SQUEEZE_LOW_N = 8.0         # below: grip at risk -> stop
-SQUEEZE_TIGHTEN_N = 11.0    # below: 2 mm tighter (~1.4 N/mm measured)
-SQUEEZE_HIGH_N = 30.0       # above: 1 mm looser (lowering the arms raised it 16 -> 24 N)
-MAX_TIGHTEN_MM = 8
-MAX_LOAD = 1.30             # stop before the backend's 150 % torque stop
-EE_TO_BOX_BOTTOM = 0.355    # ee z - box bottom z for the floor grasp at BALL_Z 0.18 (table touchdowns 0.35-0.36)
+from ..params import (  # hyper-parameters: boxpnp/params.py
+    SQUEEZE_LOW_N, SQUEEZE_TIGHTEN_N, SQUEEZE_HIGH_N, MAX_TIGHTEN_MM, MAX_LOAD, EE_TO_BOX_BOTTOM,
+    SETDOWN_SQUEEZE_N, SETDOWN_MAX_LOAD, TORSO_LOWEST_FLAT,
+)
 
 
 def squeeze_state(ctx, F0):
@@ -102,11 +100,6 @@ def recentre_and_retract(rt, x_target=0.375):
     st = squeeze_state(rt.ctx, rt.world.grip['F0'])
     rt.log(f'recentred by {-cy:+.3f}, hands at x {x_target}: {st["dF"]}')
     return {'shift_y': -cy, 'squeeze': st['dF']}
-
-
-SETDOWN_SQUEEZE_N = 20.0    # set-down squeeze cap: P1 lowered the arms with 26 N and left_arm_5 reached 131 %
-SETDOWN_MAX_LOAD = 1.25     # stop lowering the arms here and let the squat do the rest
-TORSO_LOWEST_FLAT = [0, 1.2, -2.4, 1.2, 0, 0]   # lowest squat, no lean: hands ~2 cm further forward than leaning
 
 
 def set_down_on_floor(rt, clearance=0.02):

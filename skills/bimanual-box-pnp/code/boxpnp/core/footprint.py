@@ -13,10 +13,7 @@ from shapely.ops import unary_union
 
 from . import geom, kin
 
-RES = 0.04
-FLOOR_Z = 0.06
-OBST_Z = (0.15, 1.7)
-MIN_PTS = 3                 # points per cell (stride-2 sampling) to call it occupied / free
+from ..params import RES, FLOOR_Z, OBST_Z, MIN_PTS  # hyper-parameters: boxpnp/params.py
 
 BASE_POLY = unary_union([sbox(-0.335, -0.259, 0.304, 0.259),            # base body (mesh bounds)
                          sbox(0.128, 0.24, 0.328, 0.29), sbox(0.128, -0.29, 0.328, -0.24)])   # wheels

@@ -8,7 +8,7 @@ from ..core.runner import Step
 from ..motion import carry, navigation, place, squeeze
 from ..perception import sensing
 
-CARRY_Z = 1.17          # ee z while carrying: box bottom ~0.81 m, table tops 0.67-0.74 (tested)
+from ..params import CARRY_Z  # hyper-parameters: boxpnp/params.py
 
 
 def steps(box='box', table='table', carry_z=CARRY_Z):

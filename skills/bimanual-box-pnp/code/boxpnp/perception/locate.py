@@ -15,7 +15,7 @@ from . import table as ptable
 
 BOX_DESC = 'the closed cardboard box'
 TABLE_DESC = 'the free-standing white drawer cabinet with a black top'
-MAX_CORNER_ERR = 0.08       # m: Gemini corners vs depth rectangle beyond this -> not trusted (checkpoint)
+from ..params import MAX_CORNER_ERR, MIN_MASK_POINTS  # hyper-parameters: boxpnp/params.py
 
 
 def _rect_corners(d):
@@ -131,7 +131,6 @@ def table_near_edge_points(ctx, fid, top_z, describe=TABLE_DESC, log=None):
 
 TOP_DESC = ('the flat black table top surface of the white drawer cabinet (only the black top surface: not the white '
             'cabinet front below it, not the cardboard box or the robot arms above it)')
-MIN_MASK_POINTS = 400       # masked depth points on the top; fewer = the view sees too little of it (rejected)
 
 
 def table_top_points(ctx, fid, describe=TOP_DESC, z_band=(0.55, 0.90), log=None):

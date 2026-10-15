@@ -14,10 +14,7 @@ from . import box as pbox
 from . import locate as ploc
 from . import table as ptable
 
-SEARCH_LOOKS = [[1.6, 0.0, 0.1], [1.2, 0.6, 0.1], [1.2, -0.6, 0.1], [2.5, 0.0, 0.1]]
-TABLE_LOOKS = [[1.5, 0.0, 0.7], [1.3, 0.55, 0.7], [1.3, -0.55, 0.7]]
-FULL_SIZE = {'box': (0.33, 0.15)}       # depth-only fallback: a closer detection smaller than this is partial
-MOVED_TOL = 0.10                        # m: a re-detected object this far from its prediction moved (contact?)
+from ..params import SEARCH_LOOKS, TABLE_LOOKS, FULL_SIZE, MOVED_TOL  # hyper-parameters: boxpnp/params.py
 
 
 def _depth_only(fid, near, radius, support_z):

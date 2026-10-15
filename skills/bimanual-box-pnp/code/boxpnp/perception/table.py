@@ -9,9 +9,7 @@ import numpy as np
 
 from ..core.frames import clusters, frame_dir, load
 
-TABLE_Z = (0.60, 0.85)
-DARK_MAX = 90                   # gray level of the black top
-OBST_Z = (0.15, 0.9)            # obstacles; floor depth noise reached 0.13 m near the image border, cables ~0.1
+from ..params import TABLE_Z, DARK_MAX, TABLE_OBST_Z as OBST_Z  # hyper-parameters: boxpnp/params.py
 
 
 def find_table(fdir, near=None, radius=1.5, max_range=3.5, min_side=0.3):

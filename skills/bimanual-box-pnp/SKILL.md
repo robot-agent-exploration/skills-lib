@@ -99,6 +99,8 @@ touchdown by force). The mask polygon comes back as
 asks for [x, y] (4/4 answers, test 2026-10-09); `segment` decides the order per answer by containment in box_2d. Gemini calls are serialized with
 robot calls by the host: ask between motions.
 
+**Hyper-parameters** are in one list, `code/boxpnp/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`BALL_D`, `TORSO_READY`, `ARM_READY`, `MAX_FORWARD_CALL`, `TORSO_MAX_STEP`, `MAX_LOAD`, `CARRY_Z`); each comment says how to measure it.
+
 ## Checks
 
 - find: Gemini says the box is present and fully visible; depth top-face rectangle 0.28-0.50 x 0.10-0.30 m,
