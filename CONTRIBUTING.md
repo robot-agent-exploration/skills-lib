@@ -101,7 +101,8 @@ being rewritten.
 
 **Keep the manipulation logic; take the setup from the harness.** The skill holds what
 carries over: the steps, the motion and contact strategy in the object's or target's
-frame, and the checks between steps. The environment setup (camera parameters, the
+frame, and the checks between steps, with the scene description as input from a
+perception function callers may replace. The environment setup (camera parameters, the
 robot's postures, limits and workspace) is read from the harness at run time, never copied
 from the session that wrote the skill; what the harness does not provide is measured or
 passed in.
