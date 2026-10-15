@@ -25,7 +25,8 @@ INDEX.md                          one row per skill
 skills/<slug>/
   SKILL.md                        frontmatter + the seven sections
   code/<entry>.py                 the entry: main(ctx, ...) -> {ok, measured, why}
-  code/*.py                       helpers it imports (relative to code/)
+  code/<package>/                 the skill's modules; the package is the slug with "_" for "-"
+    params.py                     the hyper-parameter list
   evidence/runs.jsonl             one JSON object per run of the code
   evidence/images/*.jpg           visual references (at most 400 kB each, e.g. 640 px JPEG)
 skills/.gitattributes             merges runs.jsonl by keeping the lines of both sides
@@ -110,11 +111,10 @@ from the session that wrote the skill. What the harness does not report, such as
 surfaces around the robot, is perceived by the robot itself.
 
 **Keep hyper-parameters in one list**, separate from the logic, each with what it
-controls, its unit, its tested range and how it was set. Put the list in a module named
-after the skill (for example `code/<slug>_params.py`): skills import each other's code, so
-a generic name such as `params.py` can load another skill's file. Mark the values that
-depend on the setup with a `# CALIBRATE:` comment saying how to measure them, so another
-agent in a new task or setup knows what to check and where to adjust it.
+controls, its unit, its tested range and how it was set, in `code/<package>/params.py`.
+Mark the values that depend on the setup with a `# CALIBRATE:` comment saying how to
+measure them, so another agent in a new task or setup knows what to check and where to
+adjust it.
 Say in `## When to use` and in each run's `conditions` which setups were tested.
 
 **Cut the task into primitives**: perception (frame -> pose and size), positioning (reach
@@ -140,20 +140,27 @@ stable, describable state; never in the middle of a contact.
   take a frame and return data without moving the robot; motion helpers do one thing;
 - the entry's `main(ctx, **params)` only chains the skill's own primitives; anything a
   different task could use lives in its own module or its own skill;
-- reuse instead of copying: import another skill's functions and declare it in the
-  frontmatter (`uses: [localize-box]`; the checker verifies those skills exist):
+- package the modules under the skill's name: Python keeps one module per name in a
+  process, so two skills that each import a plain `geom` share one file. The modules live
+  in `code/<package>/`, the slug with `_` for `-` (`code/localize_box/`), and import each
+  other relatively (`from . import geom`, `from .params import TABLE_Z`). `code/` holds
+  only the entry and stand-alone scripts, which put `code/` on `sys.path` and import the
+  package. Run a module from the workspace root with
+  `PYTHONPATH=skill-library/skills/<slug>/code python -m <package>.<module>`;
+- reuse instead of copying: import another skill's package and declare it in the
+  frontmatter (`uses: [localize-box]`; the checker verifies those skills exist). The
+  package's `__init__.py` puts the code of the skills it imports on `sys.path`; then any
+  module imports them by name (`from localize_box import perception`). Never load
+  another skill's file by path or put a folder of plain modules on `sys.path`:
 
   ```python
-  import importlib.util
+  import sys
   from pathlib import Path
-  SKILLS = Path(__file__).resolve().parents[2]          # skills/
 
-  def load(slug, module="run"):
-      path = SKILLS / slug / "code" / f"{module}.py"
-      spec = importlib.util.spec_from_file_location(f"{slug.replace('-', '_')}_{module}", path)
-      mod = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(mod)
-      return mod
+  for _slug in ("localize-box",):          # the skills in uses: whose code this package imports
+      _code = str(Path(__file__).resolve().parents[3] / _slug / "code")   # skills/<slug>/code
+      if _code not in sys.path:
+          sys.path.append(_code)
   ```
 
 - changing a primitive others use: keep its signature and contract, or add a new function
@@ -205,7 +212,7 @@ name: <slug>                       # equals the folder name
 description: <one line: what it does and when to use it>
 status: draft                      # draft | verified | deprecated
 robot: <the embodiment, e.g. Franka FR3>
-entry: code/run.py                 # the .py file that defines main(ctx, ...)
+entry: code/run.py                 # the .py file in code/ that defines main(ctx, ...)
 version: 1                         # bump when behaviour changes
 uses: [localize-box]               # optional: skills of this branch it imports
 ---
@@ -374,12 +381,12 @@ changes, and always before a session ends, so nothing learned is lost.
 Sessions that ran before this library existed kept their procedures in the session's
 `memory/` and `code/`. To import one:
 
-- refactor it into the format above: one folder per task or sub-task, the code under
-  `code/` with an entry that defines `main(ctx, ...)`, the session's notes distilled into
-  the seven sections;
+- refactor it into the format above: one folder per task or sub-task, the code as an entry
+  `code/run.py` that defines `main(ctx, ...)` and the package `code/<package>/`, the
+  session's notes distilled into the seven sections;
 - keep the behaviour as it ran on the robot; limit changes to what the format needs
-  (paths, an entry wrapper, the hyper-parameter list, removing one-off scripts) and say in
-  `## Code` what changed since the runs;
+  (paths, imports, an entry wrapper, the hyper-parameter list, removing one-off scripts)
+  and say in `## Code` what changed since the runs;
 - mark in the hyper-parameter list the values that still depend on the session's setup
   (section 3). Replacing them with values read from the harness or perceived changes
   behaviour: bump `version`;

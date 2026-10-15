@@ -68,7 +68,8 @@ INDEX.md                     one row per skill: status, what it does, when to us
 skills/<slug>/
   SKILL.md                   when to use, preconditions, procedure, code, checks,
                              failure modes, evidence
-  code/                      the entry main(ctx, ...) -> {ok, measured, why} and its helpers
+  code/run.py                the entry: main(ctx, ...) -> {ok, measured, why}
+  code/<package>/            its modules, a package named after the skill
   evidence/runs.jsonl        one record per run of the code: outcome, unattended, conditions, checks
   evidence/images/           frames of those runs
 ```

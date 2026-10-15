@@ -106,6 +106,12 @@ def validate_skill(folder):
                 bad(f'entry {entry} does not compile: {str(exc)[:200]}')
             if not re.search(r'^def main\(\s*ctx\b', source, re.M):
                 bad(f'entry {entry} must define main(ctx, ...)')
+            if code.parent != (folder/'code').resolve():
+                bad(f'entry {entry} must be a file directly in code/ (it imports the package next to it)')
+    package = slug.replace('-', '_')
+    if not (folder/'code'/package/'__init__.py').is_file():
+        bad(f'code/{package}/__init__.py missing: the modules go in a package named after the skill '
+            f'(CONTRIBUTING.md, section 3)')
     for p in folder.rglob('*.py'):
         if entry and p.resolve() == (folder/entry).resolve():
             continue
