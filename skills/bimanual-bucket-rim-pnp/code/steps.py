@@ -18,26 +18,12 @@ import grasp_plan as gp
 import nav
 import perception as pc
 
-TORSO_MID = [0, 0.785, -1.571, 0.785, 0, 0]
-TORSO_READY = [0, 0.524, -1.047, 0.524, 0, 0]
-TORSO_ZERO = [0, 0, 0, 0, 0, 0]
-TORSO_GRASP = [0, 1.047, -2.094, 1.247, 0, 0]          # low + lean 0.2 (lean steps 0.1)
-TORSO_LIFT1 = [0, 0.85, -1.7, 0.95, 0, 0]
-ARM_READY = {'right': [-0.7854, -0.5236, 0, -1.5708, 0, 0.7854, 0], 'left': [-0.7854, 0.5236, 0, -1.5708, 0, 0.7854, 0]}
-STANCE_D = 0.595         # bucket centre ahead of the base origin at the grasp: pinch IK ok for 0.58-0.60
-                         # (y -0.04..+0.045, rim 0.37), fails at 0.62; knee clearance >= 3 cm needs >= 0.58
-TILT = 0.6               # finger axis tilted forward (rad)
-PINCH_DEPTH = 0.05       # pinch point below the rim top (fingers reach ~0.2 m along -z_ee)
-PRE_DZ = 0.10            # pre-grasp height above the grasp pose
-CLOSE_A = 0.35           # gripper current (right first, then left)
-PINCH_MAX_W = 0.015      # a pinch of the thin wall reads 3-11 mm
-CARRY_STEPS = ([-0.03, 0, 0.10], [0, 0, 0.15], [0, 0, 0.04])   # hand moves at torso zero after the lift
-HELD_DF_MIN = 6.0        # summed wrist force change after the lift (bucket ~1.5 kg)
-EDGE_IN = 0.21           # bucket centre inside the cabinet edge when placing
+from bimanual_bucket_rim_pnp_params import (  # hyper-parameters: bimanual_bucket_rim_pnp_params.py
+    TORSO_MID, TORSO_READY, TORSO_ZERO, TORSO_GRASP, TORSO_LIFT1, ARM_READY, STANCE_D, TILT,
+    STEPS_PINCH_DEPTH as PINCH_DEPTH, PRE_DZ, CLOSE_A, PINCH_MAX_W, CARRY_STEPS, HELD_DF_MIN, EDGE_IN,
+    TOUCH_DF, LOAD_STOP, BUCKET_R,
+)
 BUMPER_X, BUMPER_GAP = 0.33, 0.06
-TOUCH_DF = 4.0
-LOAD_STOP = 140.0
-BUCKET_R = 0.16
 
 
 def pins(torso):

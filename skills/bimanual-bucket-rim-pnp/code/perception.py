@@ -8,12 +8,9 @@ import numpy as np
 
 from lib import frames, vlm
 
-ORANGE_HSV = ((3, 120, 70), (22, 255, 255))     # bucket hue 5-7 measured; the red distractor bucket is ~179
+from bimanual_bucket_rim_pnp_params import ORANGE_HSV, RIM_BAND, R_RANGE, R_PRIOR  # hyper-parameters: bimanual_bucket_rim_pnp_params.py
 BUCKET_DESC = ('the orange plastic bucket standing on the floor next to the white drawer cabinet that has a cardboard '
                'box on its black top (NOT a red bucket far away between other cabinets)')
-RIM_BAND = 0.035          # m below the rim top used for the circle fit
-R_RANGE = (0.11, 0.19)    # plausible rim radius (5-gallon bucket: outer rim ~0.155)
-R_PRIOR = 0.152
 
 
 def orange_mask(rgb):
