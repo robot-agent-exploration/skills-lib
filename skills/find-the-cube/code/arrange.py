@@ -14,8 +14,7 @@ sys.path.insert(0, str(Path.cwd()))                       # workspace root (api/
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import controller as C  # noqa: E402
 
-ROW_X = 0.55
-ROW_Y = (-0.18, -0.06, 0.06, 0.18)
+from find_the_cube_params import ROW_X, ROW_Y  # hyper-parameters: find_the_cube_params.py
 
 
 def place_object(ctx, xy):

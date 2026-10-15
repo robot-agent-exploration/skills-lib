@@ -3,10 +3,7 @@ previous centres, so each cluster stays attached to its cup while cups slide aro
 import cv2 as cv
 import numpy as np
 
-SCALE = 0.5                      # process at half resolution
-HSV_LO = (55, 90, 50)            # green cup colour (OpenCV H 0-180)
-HSV_HI = (100, 255, 255)
-MIN_BLOB_PX = 150                # at half resolution
+from find_the_cube_params import SCALE, HSV_LO, HSV_HI, MIN_BLOB_PX  # hyper-parameters: find_the_cube_params.py
 
 
 def green_mask(image, roi=None):
