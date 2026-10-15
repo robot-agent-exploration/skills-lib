@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import oc_reach as O  # noqa: E402
+from oc_hand_reach import oc_reach as O  # noqa: E402
 
 
 def main(ctx, targets, torso=None, posture='natural', w_posture=0.2, step_m=0.20, step_rad=0.35, tol_m=0.005,

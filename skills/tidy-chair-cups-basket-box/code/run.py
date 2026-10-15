@@ -17,8 +17,8 @@ def main(ctx, step, log=print, **args):
     if step == 'sweep_check':
         import numpy as np
         from shapely.geometry import Polygon, box
-        import scene_map as M
-        import sweep_check as SC
+        from tidy_chair_cups_basket_box import scene_map as M
+        from tidy_chair_cups_basket_box import sweep_check as SC
         od = ctx.value('rby1_status')['odometry']
         pose = tuple(args.get('pose') or (od['x'], od['y'], od['yaw']))
         moves = [tuple(m) for m in args['moves']]
@@ -33,11 +33,11 @@ def main(ctx, step, log=print, **args):
         return {'ok': r['ok'], 'why': '' if r['ok'] else f'swept footprint: {r}',
                 'measured': {**r, 'end_pose': [round(v, 4) for v in end]}}
     if step == 'chair_route':
-        import chair_route
+        from tidy_chair_cups_basket_box import chair_route
         r = chair_route.run(ctx, args['moves'], log=log)
         return {'ok': r['ok'], 'why': r.get('why', ''), 'measured': {'odometry': r.get('odometry')}}
     if step == 'drop':
-        import drop
+        from tidy_chair_cups_basket_box import drop
         return drop.drop(ctx, args['side'], args['target'], hold=args.get('hold', 0.20),
                          pitch=args.get('pitch', -0.7), release=args.get('release', True), log=log)
     return {'ok': False, 'why': f'unknown step {step}', 'measured': {}}

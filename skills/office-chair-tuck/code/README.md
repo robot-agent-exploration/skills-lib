@@ -6,19 +6,19 @@ it under the yellow (light-wood) desk. Also packaged as the skill-library skill 
 Run from the workspace root, one step at a time, and look at the returned frames before the next step:
 
 ```
-python code/push_chair/run_tuck.py find                 # Gemini + depth: chair column / facing (head scan)
-python code/push_chair/run_tuck.py approach plan        # print the base moves to stand square behind the chair
-python code/push_chair/run_tuck.py approach             # execute them (observes after each drive)
-python code/push_chair/run_tuck.py measure              # hands wide, bar profile, chair yaw (+ desk front if seen)
-python code/push_chair/run_tuck.py square               # turn by the chair yaw, lane change to centre on the bar
-python code/push_chair/run_tuck.py grasp                # two-hand grasp (tangent yaw, pitch -45, fingers 0.20 m)
-python code/push_chair/run_tuck.py transport 0.3 plan   # print the moves to bring the chair in front of the desk
-python code/push_chair/run_tuck.py transport 0.3        # pull 0.3 (right caged), turn, drive, turn to desk yaw
-python code/push_chair/run_tuck.py measure              # robot square to the desk: desk front + bar
-python code/push_chair/run_tuck.py tuck                 # push to bar-to-desk-edge 0.42 m (force-stopped)
-python code/push_chair/run_tuck.py release
-python code/push_chair/run_tuck.py verify
-python code/push_chair/run_tuck.py desk                 # once, square in front of the desk: store its pose (odometry)
+python skill-library/skills/office-chair-tuck/code/run.py find                 # Gemini + depth: chair column / facing (head scan)
+python skill-library/skills/office-chair-tuck/code/run.py approach plan        # print the base moves to stand square behind the chair
+python skill-library/skills/office-chair-tuck/code/run.py approach             # execute them (observes after each drive)
+python skill-library/skills/office-chair-tuck/code/run.py measure              # hands wide, bar profile, chair yaw (+ desk front if seen)
+python skill-library/skills/office-chair-tuck/code/run.py square               # turn by the chair yaw, lane change to centre on the bar
+python skill-library/skills/office-chair-tuck/code/run.py grasp                # two-hand grasp (tangent yaw, pitch -45, fingers 0.20 m)
+python skill-library/skills/office-chair-tuck/code/run.py transport 0.3 plan   # print the moves to bring the chair in front of the desk
+python skill-library/skills/office-chair-tuck/code/run.py transport 0.3        # pull 0.3 (right caged), turn, drive, turn to desk yaw
+python skill-library/skills/office-chair-tuck/code/run.py measure              # robot square to the desk: desk front + bar
+python skill-library/skills/office-chair-tuck/code/run.py tuck                 # push to bar-to-desk-edge 0.42 m (force-stopped)
+python skill-library/skills/office-chair-tuck/code/run.py release
+python skill-library/skills/office-chair-tuck/code/run.py verify
+python skill-library/skills/office-chair-tuck/code/run.py desk                 # once, square in front of the desk: store its pose (odometry)
 ```
 
 Lower-level steps: `pull <m>`, `drive <m>`, `turn_to <odometry yaw>`. State: `output/push_chair_state.json`.

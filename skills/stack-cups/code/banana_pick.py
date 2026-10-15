@@ -13,16 +13,15 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(HERE))
-import _deps  # noqa: F401,E402
 import numpy as np  # noqa: E402
-import pp_cups  # noqa: F401,E402
-import chair_ctl as C  # noqa: E402
-import pp_motion as M  # noqa: E402
+from stack_cups import pp_cups  # noqa: F401,E402
+from office_chair_tuck import chair_ctl as C  # noqa: E402
+from stack_cups import pp_motion as M  # noqa: E402
 from scipy.spatial.transform import Rotation as Rr  # noqa: E402
 from api.runtime import Context  # noqa: E402
 
 ST = ROOT / 'output' / 'banana_pick.json'
-from stack_cups_params import TIP  # hyper-parameters: stack_cups_params.py
+from stack_cups.params import TIP  # hyper-parameters: stack_cups/params.py
 
 
 def main(ctx, stage, a):

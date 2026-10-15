@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import run_cups  # noqa: E402
+from stack_cups import run_cups  # noqa: E402
 
 
 def main(ctx, step='stack', args=(), log=print):

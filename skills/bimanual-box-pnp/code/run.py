@@ -12,8 +12,8 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-from boxpnp.core.runner import run_task, workspace_root     # noqa: E402
-from boxpnp.tasks import floor_to_table, table_to_floor     # noqa: E402
+from bimanual_box_pnp.core.runner import run_task, workspace_root     # noqa: E402
+from bimanual_box_pnp.tasks import floor_to_table, table_to_floor     # noqa: E402
 
 TASKS = {'floor_to_table': floor_to_table.steps, 'table_to_floor': table_to_floor.steps}
 

@@ -1,7 +1,7 @@
 """Offline checks (no robot, no Gemini): module imports, pinch IK at the tested stance, knee clearance, route
 planning on the C1 scene, and the silhouette fit on a saved frame with a fixed target box.
 
-    MPLCONFIGDIR=$TMPDIR python3 code/basket_pnp/offline_test.py [frame_dir_with_bucket]"""
+    MPLCONFIGDIR=$TMPDIR python3 skill-library/skills/bimanual-bucket-rim-pnp/code/offline_test.py [frame_dir_with_bucket]"""
 import sys
 from pathlib import Path
 
@@ -10,11 +10,11 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import grasp_plan as gp  # noqa: E402
-import nav  # noqa: E402
-import perception as pc  # noqa: E402
-import steps as S  # noqa: E402
-from lib import frames  # noqa: E402
+from bimanual_bucket_rim_pnp import grasp_plan as gp  # noqa: E402
+from bimanual_bucket_rim_pnp import nav  # noqa: E402
+from bimanual_bucket_rim_pnp import perception as pc  # noqa: E402
+from bimanual_bucket_rim_pnp import steps as S  # noqa: E402
+from bimanual_bucket_rim_pnp.lib import frames  # noqa: E402
 
 
 def check_ik(c=(0.595, 0.0), rim=0.37):

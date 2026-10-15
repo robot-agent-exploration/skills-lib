@@ -75,7 +75,7 @@ closed on air) after every step), `chair_ctl.py` (primitives: `bar_profile`, `ba
 edge with the armrests just under the edge). Every base command retries once on the transient SDK error
 "This stream is expired" (seen on ~every second base call on 2026-10-09).
 
-**Hyper-parameters** are in one list, `code/office_chair_tuck_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`FINGER`, `READY_ARM`); each comment says how to measure it.
+**Hyper-parameters** are in one list, `code/office_chair_tuck/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`FINGER`, `READY_ARM`); each comment says how to measure it. The modules are the package `code/office_chair_tuck/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `office_chair_tuck` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m office_chair_tuck.<module>`. Its `__init__.py` puts the code of the skills it imports (oc-hand-reach) on `sys.path`, so modules import them as packages too.
 
 ## Checks
 - measure: profile ok, bar span ≥ 0.3 m, curvature > 0 (inverted = contaminated by fingers), z_top 1.0-1.05.

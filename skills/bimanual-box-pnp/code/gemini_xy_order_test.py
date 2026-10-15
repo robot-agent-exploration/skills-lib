@@ -6,7 +6,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(next(p for p in HERE.parents if (p / 'api' / 'runtime.py').exists())))
 import numpy as np, cv2
-from boxpnp.core import vlm, frames as pf
+from bimanual_box_pnp.core import vlm, frames as pf
 from api.runtime import Context
 F = '20261009000618718682'
 WHAT = ('the flat black table top surface of the white drawer cabinet (only the black top surface: not the white '

@@ -1,6 +1,6 @@
 """Offline test of the two-cup stacking perception on recorded frames (no robot motion; Gemini calls only).
 
-  python code/pick_place/offline_cups.py
+  python skill-library/skills/stack-cups/code/offline_cups.py
 
 References: what the frames show and what happened next on the robot (2026-10-09, RUNS.md C1 / C2).
 Report: output/pick_place/offline/report_cups.json"""
@@ -9,14 +9,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import _deps  # noqa: F401,E402
 import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 
-import geom  # noqa: E402
-import pp_cups as K  # noqa: E402
-import pp_perception as PP  # noqa: E402
-import pp_vis  # noqa: E402
+from stack_cups import pp_cups as K  # noqa: E402  (first: the package puts office-chair-tuck on sys.path)
+from office_chair_tuck import geom  # noqa: E402
+from stack_cups import pp_perception as PP  # noqa: E402
+from stack_cups import pp_vis  # noqa: E402
 
 OUT = geom.ROOT / 'output' / 'pick_place' / 'offline'
 LOCATE = [('2026100920221219ee6d', ['silver cup on the left', 'silver cup in the front middle'])]
