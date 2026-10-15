@@ -27,7 +27,7 @@ FLANGE_D, HAND_YAW, TCP_D = 0.107, -math.pi / 4, 0.1034
 LIMITS = [(-2.7437, 2.7437), (-1.7837, 1.7837), (-2.9007, 2.9007), (-3.0421, -0.1518),
           (-2.8065, 2.8065), (0.5445, 4.5169), (-3.0159, 3.0159)]
 
-LINK_PAD = 0.01           # added to every link capsule radius (models are approximate)
+from bandu_params import LINK_PAD, TABLE_FROM_BASE  # hyper-parameters: bandu_params.py
 # (frame, p0, p1, radius) in DH frame 1..7 (frame 8 = flange): link bodies as capsules
 LINK_CAPSULES = [
     (1, (0, 0, -0.333), (0, 0, -0.05), 0.06),
@@ -43,7 +43,6 @@ LINK_CAPSULES = [
 HAND_BOXES_3D = [('housing', (-0.035, 0.035), (-0.105, 0.105), (-TCP_D, -0.035)),
                  ('camera', (-0.095, -0.035), (-0.06, 0.0), (-0.12, -0.05))]
 FINGER_HALF_X, FINGER_THICK, FINGERTIP_BEYOND_TCP = 0.011, 0.012, 0.0124
-TABLE_FROM_BASE = 0.25    # the table is checked only this far from the base axis (the base column stands lower)
 
 
 def _dh(a, d, alpha, theta):

@@ -219,7 +219,9 @@ Left out:
 - `left_cam_correction.json`: see above.
 - The session's offline analysis scripts.
 
-**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}`. `controller.ROOT` and `geom.FRAMES` now resolve against the working directory instead of the session's `code/airfry/` layout. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed.
+**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}`. `controller.ROOT` and `geom.FRAMES` now resolve against the working directory instead of the session's `code/airfry/` layout. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/air_fry_pan_params.py` (2026-10-15).
+
+**Hyper-parameters** are in one list, `code/air_fry_pan_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`DROP_Z`, `PERC_CAMS`, `VIEW_CAMS`, `BALL_DROP_Z`, `TABLE_VIEW`, `USABLE_CAMERAS`, `HOME`, `MAX_JOINT_STEP`, `JOINT_TARGET_MARGIN`, `TABLE_Z`, `FRYER_REGION`); each comment says how to measure it.
 
 ## Checks
 - perceive: the preconditions above. Reported values: protrusion 0.047-0.059 closed, arm top 0.256-0.265, banana

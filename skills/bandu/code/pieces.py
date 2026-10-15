@@ -34,13 +34,10 @@ PIECES = {
 }
 # where a stacked piece's bottom ends up above the base top when seated
 SEAT_ABOVE_BASE = {'urn': 0.0475, 'knob': 0.0749, 'dowel': 0.0}
-WIDTH_TOL = 0.006
-GRIP_N = 20.0             # grasp force; pieces that get inserted use their 'grip' (40 N: a ball-held knob
-                          # turned in a 20 N grip at rim contacts). Never re-grasp while holding: a second
-                          # grasp on a held urn reported is_grasped False, stopped squeezing and the urn fell.
-PALM_ABOVE_FINGERTIPS = 0.047   # hand body underside (TCP + 0.035) above the fingertip ends
-TRANSIT_Z = 0.30          # empty-hand travel height: fingertips 4.6 cm over the full tower (0.2415)
-CARRY_BOTTOM_Z = 0.28     # a carried piece's bottom stays this high (level moves sag up to 2.3 cm)
+from bandu_params import (  # hyper-parameters: bandu_params.py
+    WIDTH_TOL, GRIP_N, PALM_ABOVE_FINGERTIPS, PIECES_TRANSIT_Z as TRANSIT_Z, CARRY_BOTTOM_Z, PROBE_SPEED,
+    PROBE_FORCE, SEATED_TOL_DEFAULT, MAX_PROBES,
+)
 
 
 class PieceLost(RuntimeError):
@@ -206,10 +203,6 @@ def hand_conflicts(tcp_xyz, yaw, objects, margin=0.012, ignore=(), opening=0.08,
     return out
 
 
-PROBE_SPEED = 0.005      # m/s, guarded probe down
-PROBE_FORCE = 1.5        # N
-SEATED_TOL_DEFAULT = 0.006   # contact this close to the seat counts as inserted (PIECES seat_tol overrides)
-MAX_PROBES = 30
 CIRCLE = [(math.cos(k * math.pi / 4), math.sin(k * math.pi / 4)) for k in range(8)]
 
 

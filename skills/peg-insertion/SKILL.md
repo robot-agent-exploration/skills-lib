@@ -196,6 +196,8 @@ session's saved frames, `register` and `fit_peg` reproduce the session's numbers
 - `fit_peg` rectangle: (0.4630, 0.2155), 86.6 deg.
 - `fit_peg` triangle: 23.2 deg, polarity -1. This is wrong, as the session's fit was.
 
+**Hyper-parameters** are in one list, `code/peg_insertion_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. None depends on the setup: the board is registered from the cameras on every run. The board model stays in `board_model.json`.
+
 ## Checks
 - **Registration:** every outline lies on its hole in the overlay, and the score peak is sharp (+-0.5 deg). The L1
   hexagon fell straight in at the registered centre.

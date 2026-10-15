@@ -17,7 +17,7 @@ FRAMES = Path('runtime') / 'frames'
 # valid_after_epoch (s). The right camera moved too far to correct and was not used.
 _CORR = Path(__file__).resolve().parent / 'left_cam_correction.json'
 LEFT_FIX = json.loads(_CORR.read_text()) if _CORR.exists() else None
-USABLE_CAMERAS = ('left', 'wrist')
+from air_fry_pan_params import USABLE_CAMERAS  # hyper-parameters: air_fry_pan_params.py
 
 
 def corrected_T(name, T_meta, t_capture=None):

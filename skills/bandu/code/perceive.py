@@ -21,16 +21,13 @@ import exterior
 from motion import table_z_at
 from tower import BASE, SLOTS
 
-HOME = [0.0, -math.pi / 4, 0.0, -3 * math.pi / 4, 0.0, math.pi / 2, math.pi / 4]
-MAX_JOINT_STEP = 1.4            # rad per franka_move_joints call (tool limit 1.5)
+from bandu_params import HOME, MAX_JOINT_STEP, CLASS_SLACK, MAX_EXTENT, PRESENT_MIN_POINTS  # hyper-parameters: bandu_params.py
 
 # piece height above the table (touch model) as seen by exterior depth (p97 of the consensus
 # cluster), 2026-10-10 layouts: ring 13-20, barrel 38-42, urn 37-40, knob 49-51, goblet 55-62,
 # dowel 70-104 mm (thin: its top is undersampled)
 HEIGHT_CLASSES = [('ring', 0.008, 0.028), ('barrel|urn', 0.030, 0.0445), ('knob|slant', 0.0445, 0.054),
                   ('goblet|slant', 0.054, 0.066), ('dowel', 0.066, 0.140)]      # slant: 49-62 mm
-CLASS_SLACK = 0.006             # a Gemini label is accepted if the height is this close to its band
-MAX_EXTENT = 0.070              # a standing piece's cluster is smaller than this in x and y
 
 # Presence at the tower slots: number of wood points within radius r of the slot axis that are
 # higher than `level` above the base top. Calibrated on frames of every stack state (2026-10-10):
@@ -38,7 +35,6 @@ MAX_EXTENT = 0.070              # a standing piece's cluster is smaller than thi
 PRESENCE = {'ring': (0.020, 0.008), 'barrel': (0.015, 0.025), 'goblet': (0.020, 0.040),
             'urn': (0.015, 0.076), 'dowel': (0.012, 0.050), 'knob': (0.012, 0.105),
             'slant': (0.015, 0.060)}     # slant: probed around its grasp axis, above the barrel top
-PRESENT_MIN_POINTS = 60
 
 def park(ctx, m):
     """Lift clear and go to the home joint pose (exterior cameras then see the whole table)."""

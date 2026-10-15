@@ -16,10 +16,7 @@ import numpy as np
 
 FRAMES = Path('runtime')/'frames'     # the session's frame store, relative to the workspace root (cwd)
 
-TABLE_Z = 0.09
-MAP_X = (0.20, 0.85)
-MAP_Y = (-0.50, 0.50)
-MAP_RES = 0.0025
+from swipe_table_params import TABLE_Z, MAP_X, MAP_Y, MAP_RES  # hyper-parameters: swipe_table_params.py
 
 
 def load_frame(frame_id):

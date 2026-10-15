@@ -16,12 +16,7 @@ sys.path.insert(0, str(HERE))      # sibling modules of this skill (motions, per
 import motions as M      # noqa: E402
 import perception as P   # noqa: E402
 
-GRASP_FORCE = 20.0
-TCP_ABOVE_BOX = 0.030     # pinch with the TCP at least this far above the box top (fingertips ~2 cm)
-PULL_Z = 0.47             # lift to here: the sheet comes free (sheet ~20 cm long)
-DROP_Z = 0.115            # release with the pinch nearly at the table: the sheet crumples there
-                          # (released at 0.13 the hanging sheet folded over 5-7 cm to one side)
-TRAVEL_Z = 0.45
+from swipe_table_params import GRASP_FORCE, TCP_ABOVE_BOX, PULL_Z, DROP_Z, TRAVEL_Z  # hyper-parameters: swipe_table_params.py
 
 
 def tissue_box(frame, near=(0.40, -0.17), half=0.18):

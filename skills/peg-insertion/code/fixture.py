@@ -10,8 +10,7 @@ import numpy as np
 
 from motion import move, status
 
-PUSH = 0.0015        # commanded push per call beyond the last measured position (m)
-BLOCKED = 0.0007     # moved this much less than commanded = blocked by the wall (m)
+from peg_insertion_params import PUSH, BLOCKED  # hyper-parameters: peg_insertion_params.py
 
 
 def board_patch():

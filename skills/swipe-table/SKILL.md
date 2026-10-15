@@ -190,7 +190,9 @@ Changes from the session's code (no algorithm, motion or threshold changed):
 - Caveat: module names are generic (`steps`, `motions`, `perception`, `controller`); a process that also imports another
   skill's module of the same name gets whichever was imported first.
 
-**Changed since the session's runs:** `main` in `controller.py` and `paper_controller.py` is a new wrapper around the session's entry (renamed `run_logged`) that returns `{ok, measured, why}`. Log and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed.
+**Changed since the session's runs:** `main` in `controller.py` and `paper_controller.py` is a new wrapper around the session's entry (renamed `run_logged`) that returns `{ok, measured, why}`. Log and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/swipe_table_params.py` (2026-10-15).
+
+**Hyper-parameters** are in one list, `code/swipe_table_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`STORED_REFERENCE`, `Z_FLOOR`, `STAIN_ROI`, `TABLE_Z`, `MAP_X`, `MAP_Y`, `CARRY_Z`, `LOWER_Z`, `SAFE_Z`, `MAX_SEG`, `PINCH_PRESS_Z`, `PATH_X`, `PATH_Y`, `CARRY_MAX_X`, `CARRY_MAX_Y`, `HOME_JOINTS`, `CONTACT_PROBE_Z`, `GRASP_X`, `GRASP_Y`, `PULL_Z`, `DROP_Z`, `TRAVEL_Z`); each comment says how to measure it.
 
 ## Checks
 

@@ -15,28 +15,11 @@ import numpy as np
 
 import tracker
 
-TPL_HALF = 15            # template half size at half resolution (60x60 px at full resolution)
-SEARCH = 10              # local template search radius at half resolution
-VISIBLE_SCORE = 0.85     # correlation at P that means the cube is in view (plain table < 0.8)
-FOLLOW_SCORE = 0.92      # above this, follow small nudges of the cube
-UNCOVER_SCORE = 0.92     # a cover is cancelled only by a clear view of the cube (own: 0.97-0.99)
-TPL_DIRT_MAX = 0.05      # template patch may hold at most this much green / skin
-COVER_PX = 65            # cup track centre within this of P (full-res px; the tall cup's blob
-                         # centre sits up to ~55 px off the cube under it near the image edges) ...
-COVER_FRAMES = 12        # ... for this many frames while the cube is occluded = covered
-MOVE_MIN_PX = 30         # a depth detection farther than this from P is a move candidate
-MOVE_CONFIRM_PX = 20     # consecutive detections within this of each other confirm the move
-CUBE_SIZE_MM = (33, 62)  # plausible cube footprint from depth (trials: 40-52 mm)
-CUBE_AREA = (350, 1200)  # depth pixels at step 2 (trials: 510-780)
-CUBE_MIN_H = 0.02        # height above the local table (trials: 0.023-0.041)
-# cube dropped into an upright cup: a white region enclosed by that cup's green blob
-HOLE_AREA = (80, 1600)   # half-res px (cube top ~22x22 px half-res, partly hidden by the rim)
-HOLE_WHITE = 0.55        # fraction of the hole matching the object's colour
-HOLE_COLOUR_DIST = 35    # Lab distance (L weighted 0.3: the object lies in the cup's shadow)
-HOLE_DARK_V = 70         # darker pixels inside a cup are its shadowed wall, not the object
-HOLE_SKIN_MAX = 0.35     # fraction of the hole that looks like skin (a hand holding the object)
-INSIDE_PX = 70           # hole centroid to cup track centre (full-res px)
-INSIDE_FRAMES = 8        # consecutive frames with the cube seen inside the same cup
+from find_the_cube_params import (  # hyper-parameters: find_the_cube_params.py
+    TPL_HALF, SEARCH, VISIBLE_SCORE, FOLLOW_SCORE, UNCOVER_SCORE, TPL_DIRT_MAX, COVER_PX, COVER_FRAMES,
+    MOVE_MIN_PX, MOVE_CONFIRM_PX, CUBE_SIZE_MM, CUBE_AREA, CUBE_MIN_H, HOLE_AREA, HOLE_WHITE,
+    HOLE_COLOUR_DIST, HOLE_DARK_V, HOLE_SKIN_MAX, INSIDE_PX, INSIDE_FRAMES,
+)
 
 
 def gray_half(image):

@@ -35,22 +35,11 @@ import perception as P
 import steps as S
 import tissues as T
 
-SHEETS_PER_PASS = 6
-MAX_PASSES = 2
-STAIN_MARGIN = 0.035
-RESIDUE_MARGIN = 0.015
-VERIFY_ROI_MARGIN = 0.15
-CLEAN_AREA_M2 = 4e-4
-CLEAN_WRIST_M2 = 3e-4
-STAIN_PRESENT_M2 = 3e-4
-STAIN_PRESENT_NOREF_M2 = 8e-4   # without a reference: false patches up to ~5 cm2 near the base
-STAIN_ROI = (0.36, 0.80, -0.42, 0.42)   # where stains are searched (operator pours 40-65 cm out)
-POUR_ASKS = 3
-BOX_MOVED_M = 0.03              # stop if the tissue box shifts more than this (pulled along with a sheet)
-LEFTOVER_RISE_M = 0.018     # real leftover sheets rose 22-50 mm, false patches (shadows) 0-17 mm
-LEFTOVER_MIN_M2 = 2e-4
-MAX_LEFTOVER_PICKS = 8          # leftover-sheet picks per pass at most
-STORED_REFERENCE = '20261006093511e0ce16'   # towel-scene clean table; box + bin are masked out
+from swipe_table_params import (  # hyper-parameters: swipe_table_params.py
+    SHEETS_PER_PASS, PAPER_CONTROLLER_MAX_PASSES as MAX_PASSES, STAIN_MARGIN, RESIDUE_MARGIN,
+    VERIFY_ROI_MARGIN, CLEAN_AREA_M2, CLEAN_WRIST_M2, STAIN_PRESENT_M2, STAIN_PRESENT_NOREF_M2, STAIN_ROI,
+    POUR_ASKS, BOX_MOVED_M, LEFTOVER_RISE_M, LEFTOVER_MIN_M2, MAX_LEFTOVER_PICKS, STORED_REFERENCE,
+)
 
 POUR_MESSAGE = (
     "Ready for the soy sauce. Please pour it onto the table somewhere 40-65 cm in front of the robot "

@@ -28,30 +28,14 @@ import tracker  # noqa: E402
 Q_DOWN = [1.0, 0.0, 0.0, 0.0]
 Q_ALONG_X = [0.7071068, 0.7071068, 0.0, 0.0]   # yaw 90: fingers and the 20 cm hand body along base x,
                                                 # clear of neighbour cups in a row along y
-WATCH_POS = [0.47, 0.0, 0.62]     # wrist camera sees x 0.35..0.95, y -0.5..0.5 from here
-ROI = (0, 0, 1280, 520)           # wrist image region above the gripper fingers
-TABLE_Z = 0.09
-CUBE_Z = (0.103, 0.16)            # cube top ~0.12 (3 cm cube)
-CUP_TOP_MIN_Z = 0.15              # inverted cup top ~0.183 (9.3 cm cup)
-N_CUPS = 4
+from find_the_cube_params import (  # hyper-parameters: find_the_cube_params.py
+    WATCH_POS, ROI, TABLE_Z, CUBE_Z, CUP_TOP_MIN_Z, N_CUPS, CUP_GRASP_BELOW_TOP, CUP_FORCE, CUBE_FORCE,
+    SMALL_FORCE, GENTLE_FORCE, SLIP_MM, HAND_HALF_LENGTH, HAND_HALF_WIDTH, HAND_CLEARANCE, RIDGE_DL,
+    DROP_ABOVE_GRASP, DROP_CLEARANCE, SAVE_RECORDING, CLOSEUP_BACK, CLOSEUP_Z, SIDE_LOOK, CAM_OFFSET_TCP,
+    CAM_CLEARANCE,
+)
 COVER_PX = 45                     # UNUSED (stale): identification uses shuffle.COVER_PX = 65
 COVER_FRAMES = 12                 # UNUSED: shuffle.COVER_FRAMES
-CUP_GRASP_BELOW_TOP = 0.012       # fingertips 1.2 cm below the cup top: 3 cm / 15 N pinched a cube
-CUP_FORCE = 8                     # sitting high inside the cup through the wall (trial 8)
-CUBE_FORCE = 20
-SMALL_FORCE = 12                  # objects under 45 mm
-GENTLE_FORCE = 6                  # re-grasp force after the grip closed in (red cube slid out at 20 N)
-SLIP_MM = 4                       # finger closing during the 2 cm test lift that counts as slipping
-HAND_HALF_LENGTH = 0.105         # Franka Hand body ~21 cm along the finger axis ...
-HAND_HALF_WIDTH = 0.03           # ... and ~6 cm across
-HAND_CLEARANCE = 0.04            # hand-body rectangle to other cups' centres (cup radius 3 cm + 1 cm)
-RIDGE_DL = 12                    # brightness step (Lab L) between the halves of a ridged top
-DROP_ABOVE_GRASP = 0.02          # release the moved cup with its rim ~2 cm above the table
-DROP_CLEARANCE = 0.09            # dropped cup centre to other cups / the object (rims touch at 7.5 cm)
-SAVE_RECORDING = True            # copy the shuffle's wrist frames to output/recordings/
-CLOSEUP_BACK = 0.10              # close-up TCP this far towards the robot from the cup ...
-CLOSEUP_Z = 0.50                 # ... at this height (camera ~0.4 m from the cup top)
-SIDE_LOOK = 0.10                 # sideways offset of the second look after a blocked descent
 LOG = []
 
 
@@ -411,10 +395,6 @@ def housing_clearance(center, phi, others, half=HAND_HALF_LENGTH, half_w=HAND_HA
         db = max(0.0, abs(float(v @ n)) - half_w)
         best = min(best, float(math.hypot(da, db)))
     return best
-
-
-CAM_OFFSET_TCP = (-0.071, 0.029)  # wrist camera from the TCP in TCP x/y (it rides behind the fingers)
-CAM_CLEARANCE = 0.08              # camera centre to other cups' centres when the TCP is low
 
 
 def camera_clearance(center, yaw_deg, others):

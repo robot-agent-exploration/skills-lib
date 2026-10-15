@@ -12,26 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))   # sibling modules of 
 import motions as M      # noqa: E402
 import perception as P   # noqa: E402
 
-# --- tunables (tested on 2026-10-06, wet dark terry towel ~45x70 cm, white table z=0.09) ---
-CARRY_Z = 0.45            # towel (wad grasp) hangs almost clear of the table here
-LOWER_Z = 0.16            # lowering the carried towel to here piles it up under the gripper
-SAFE_Z = 0.30
-MAX_SEG = 0.35            # split long moves (move_pose accepts <= 0.40 m)
-PINCH_PRESS_Z = 0.10      # flat towel: press fingertips into cloth (stalls ~0.108)
-PINCH_TOL_MM = 10.0
-WAD_FORCE = 50.0
-PINCH_FORCE = 40.0
-MIN_WAD_WIDTH = 0.004     # a grasp narrower than this holds only a thin pinch
-PATH_X = (0.33, 0.68)     # gripper path limits while scrubbing near the table (beyond x 0.68 the
-PATH_Y = (-0.36, 0.36)    # (fit_region then shrinks to IK-safe postures: camera keep-out, margins); pile reaches ~7 cm further
-CARRY_MAX_X = 0.60        # at CARRY_Z, x > 0.65 is out of reach for |y| ~0.38 (IK map 2026-10-06)
-CARRY_MAX_Y = 0.32
-WRIST_MARGIN = 0.06        # wrist residue check covers the wiped region + this
-HOME_JOINTS = [-0.0155, -0.7602, -0.0021, -2.3552, 0.0206, 1.5761, 0.752]   # libfranka ready pose here
-CAMERA_SLACK = 0.01        # extra camera clearance beyond the service keep-out (0.20 m, enforced live by the service)
-CONTACT_PROBE_Z = 0.12   # press target to find the pad's contact height (pad stalls ~0.13-0.15)
-GRASP_X = (0.30, 0.68)
-GRASP_Y = (-0.34, 0.34)
+from swipe_table_params import (  # hyper-parameters: swipe_table_params.py
+    CARRY_Z, LOWER_Z, SAFE_Z, MAX_SEG, PINCH_PRESS_Z, PINCH_TOL_MM, WAD_FORCE, PINCH_FORCE, MIN_WAD_WIDTH,
+    PATH_X, PATH_Y, CARRY_MAX_X, CARRY_MAX_Y, WRIST_MARGIN, HOME_JOINTS, CAMERA_SLACK, CONTACT_PROBE_Z,
+    GRASP_X, GRASP_Y,
+)
 
 
 class StepError(RuntimeError):

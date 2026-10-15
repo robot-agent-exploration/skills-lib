@@ -11,8 +11,7 @@ import cv2
 import numpy as np
 
 FRAMES = Path('runtime') / 'frames'     # saved frames, relative to the working directory (workspace root)
-TABLE_Z = 0.093
-REGION = dict(x=(0.30, 0.80), y=(-0.40, 0.40))     # table area searched for pieces
+from bandu_params import TABLE_Z, REGION  # hyper-parameters: bandu_params.py
 WOOD_H, WOOD_S_MIN, WOOD_V_MIN = (5, 30), 45, 40
 
 

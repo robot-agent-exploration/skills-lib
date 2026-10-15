@@ -24,34 +24,12 @@ import perception as per                                                # noqa: 
 ROOT = Path('.')
 Z = np.array([0.0, 0.0, 1.0])
 
-# ---- geometry learned in manual run 1 (offsets along the drawer axis d, metres) ----------
-FACE22_MODEL = 0.1674        # grip outer face at z=0.22 in the collision-model frame (closed)
-GRASP_FROM_FACE = -0.0116    # handle grasp TCP along d, relative to face(z=0.22)
-GRASP_BELOW_ARM_TOP = 0.009  # handle grasp TCP z below the arm top
-HANDLE_TILT = np.deg2rad(5)  # approach axis tilted toward the fryer
-BASKET_FROM_FACE = -0.1474   # basket rim centre (closed drawer) relative to face(z=0.22)
-PROTRUSION_CLOSED = 0.065    # grip face - body front below this = drawer closed (closed ~0.056-0.059)
-PULL = 0.125                 # drawer pull distance (tested 0.126; front tips ~2-3 cm on release)
-PULL_STEP = 0.03
-GRASP_FORCE_HANDLE = 50.0    # N
-BANANA_FORCE = 20.0          # N
-DROP_BETA = np.deg2rad(60)   # hand tilt about the banana axis at the drop
-DROP_MID_FROM_BASKET = 0.015  # banana middle beyond basket centre along d
-DROP_Z = 0.36                # TCP height at release (housing clears fryer top)
-ROT_SPOT = (0.26, -0.05, 0.50)  # (along d, along t, z) where the held banana is re-oriented
-FINGER_HALF = 0.00875        # closed-finger half thickness along hand x
-PUSH_Z_BELOW_ARM_TOP = 0.0205
-PERC_CAMS = ('left',)        # right exterior camera moved after a collision: unusable
-VIEW_CAMS = ('wrist', 'left')
-VIEW_QUAT = np.array([1.0, 0.0, 0.0, 0.0])   # wrist camera looks down and slightly forward
-VIEW_DRAWER = (0.215, 0.0, 0.50)  # (along d, along t, z) wrist view of handle + open basket
-TOP_VIEW_OFFSETS = [np.array(v) for v in ((-0.07, 0.06, 0.20), (-0.09, 0.05, 0.18), (-0.11, 0.04, 0.16))]  # TCP rel. lid
-BALL_FORCE = 10.0            # N (ball may be hollow)
-BALL_DROP_FROM_BASKET = 0.045  # ball released above basket centre + this along d (exposed part)
-BALL_DROP_Z = 0.30           # TCP height at ball release (~3 cm above rim)
-TABLE_VIEW = np.array([0.42, 0.26, 0.55])   # wrist view of the table left of the fryer
-MIN_MARGIN = 0.15            # joint margin (rad) required for planned configurations
-MIN_CLEAR = 0.008            # m, coarse model clearance required
+from air_fry_pan_params import (  # hyper-parameters: air_fry_pan_params.py
+    FACE22_MODEL, GRASP_FROM_FACE, GRASP_BELOW_ARM_TOP, HANDLE_TILT, BASKET_FROM_FACE, PROTRUSION_CLOSED,
+    PULL, PULL_STEP, GRASP_FORCE_HANDLE, BANANA_FORCE, DROP_BETA, DROP_MID_FROM_BASKET, DROP_Z, ROT_SPOT,
+    FINGER_HALF, PUSH_Z_BELOW_ARM_TOP, PERC_CAMS, VIEW_CAMS, VIEW_QUAT, VIEW_DRAWER, TOP_VIEW_OFFSETS,
+    BALL_FORCE, BALL_DROP_FROM_BASKET, BALL_DROP_Z, TABLE_VIEW, MIN_MARGIN, MIN_CLEAR,
+)
 
 
 class StepFailure(RuntimeError):
