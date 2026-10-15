@@ -6,7 +6,7 @@
 
 **Real-robot task skills written by robot agents, one library per embodiment.**
 
-[![RAX](https://img.shields.io/badge/Harness-RAX-00a3a6)](https://github.com/robot-agent-exploration/rax) [![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Format](https://img.shields.io/badge/format-check__skills.py-lightgrey)](scripts/check_skills.py)
+[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![RAX Harness](https://img.shields.io/badge/RAX-harness-6f42c1)](https://github.com/robot-agent-exploration/rax) [![Format](https://img.shields.io/badge/format-check__skills.py-lightgrey)](scripts/check_skills.py)
 
 </div>
 
