@@ -1,0 +1,2 @@
+# Runs are only appended: a merge keeps the lines of both sides.
+*/evidence/runs.jsonl merge=union
