@@ -16,10 +16,7 @@ if str(_Path(__file__).resolve().parent) not in _sys.path:
 
 from perception import Frame, view_pose_for
 
-TILT = math.radians(22)        # wrist camera axis leans this much towards TCP +x
-VIEW_HEIGHT = 0.15             # camera height above the rim (m)
-MIN_SCORE = 12.0               # grey levels rim-minus-opening (seen 30-70 on the urn)
-VIEW_YAWS = (math.pi / 2, 0.0, -math.pi / 2)   # visit order; images at the first and last (via 0: a 180 deg turn in one move hits J7)
+from bandu_params import TILT, VIEW_HEIGHT, MIN_SCORE, VIEW_YAWS  # hyper-parameters: bandu_params.py
 
 
 def ring_kernel(r0, r1, size):

@@ -28,18 +28,14 @@ from perception import Frame
 from pieces import PIECES, check_held, carry_height
 from motion import wrap_grasp_yaw
 
-FOOT_GAP = 0.020                 # foot bottom above the rim while measuring
-MAX_OFFSET = 0.0008              # m, aimed foot-vs-lip offset (user: at most 1 mm)
-ACCEPT_OFFSET = 0.0010           # m, still accepted when the corrections run out
-MAX_TILT = math.radians(2.5)     # tilt corrected above this (the fit jitters ~1 deg; the throat takes ~3)
-ACCEPT_TILT = math.radians(3.0)
-MAX_ITER = 6
-FOOT_ROWS = (0.003, 0.004, 0.005, 0.006, 0.007)   # heights above the held piece's bottom for its centre
+from bandu_params import (  # hyper-parameters: bandu_params.py
+    FOOT_GAP, MAX_OFFSET, ACCEPT_OFFSET, MAX_TILT, ACCEPT_TILT, MAX_ITER, FOOT_ROWS, SEATED_TOL,
+    UPRIGHT_ROWS, MAX_SEATED_TILT,
+)
 # per held piece: outer radius of the rim it goes into, heights for the axis fit (below the fingers)
 PROFILES = {'knob': dict(lip_r=0.013, tilt_rows=np.arange(0.003, 0.0235, 0.002)),     # into the urn
             'urn': dict(lip_r=0.023, tilt_rows=np.arange(0.003, 0.0155, 0.002))}      # into the goblet's cup
 DESCENT_SPEED, DESCENT_FORCE = 0.005, 3.0
-SEATED_TOL = 0.006
 
 
 def _crossing(row, uc, side, inner_is_max, k_in, k_out):
@@ -236,10 +232,6 @@ def upright(fid, xy, z_bottom, heights):
                 for f, rows in data.values() for dz, uc, _ in rows]
     fit = least_squares(resid, [0.0, 0.0, 0.0, 0.0])
     return math.degrees(math.atan(math.hypot(fit.x[2], fit.x[3]))), float(np.sqrt(np.mean(np.square(fit.fun))))
-
-
-UPRIGHT_ROWS = {'urn': np.arange(0.016, 0.037, 0.002)}     # above the goblet's rim, below the lip
-MAX_SEATED_TILT = 12.0     # deg: a seated urn reads 7-8 (shape/perspective bias; the goblet on the table 2), caught on the rim 22-24
 
 
 def held_tilt(fid, tcp, drop, rows):

@@ -11,15 +11,10 @@ Measured on this robot (2026-10-10):
 import math
 import time
 
-TABLE_Z = 0.093          # table top (depth and contact agree within ~2 mm)
-FINGERTIP_BELOW_TCP = 0.0124
-TCP_Z_MIN = 0.1005       # workspace box floor is 0.10
-APPROACH_DZ = 0.04       # move_pose stops this far above a low target; guarded move does the rest
-TRANSIT_Z = 0.27         # safe travel height (tallest stack top ~0.24)
-GUARD_SPEED = 0.01       # m/s for the final descent
-GUARD_FORCE = 4.0        # N above baseline = contact
-MAX_STEP = 0.35          # m per move_pose call (tool limit 0.4)
-MAX_DESCENT = 0.12       # m per move_pose descent before a guarded approach (overshoot <= ~2.5 cm)
+from bandu_params import (  # hyper-parameters: bandu_params.py
+    TABLE_Z, FINGERTIP_BELOW_TCP, TCP_Z_MIN, APPROACH_DZ, TRANSIT_Z, GUARD_SPEED, GUARD_FORCE, MAX_STEP,
+    MAX_DESCENT,
+)
 
 
 def table_z_at(xy):

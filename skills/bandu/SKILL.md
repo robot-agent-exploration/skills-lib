@@ -173,7 +173,9 @@ here) and the one-off scripts in the session's `output/scratch/` (for example `r
 `insert_held_knob.py`). Module names are generic (`motion`, `pieces`, `tower`, `perception`): do not load another
 skill with the same module names in the same Python process.
 
-**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}` and applies the optional base / spot overrides. Output and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed.
+**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}` and applies the optional base / spot overrides. Output and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/bandu_params.py` (2026-10-15).
+
+**Hyper-parameters** are in one list, `code/bandu_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TABLE_FROM_BASE`, `ALT_SPOTS`, `TABLE_Z`, `REGION`, `TCP_Z_MIN`, `TRANSIT_Z`, `MAX_STEP`, `HOME`, `MAX_JOINT_STEP`, `CAM_IN_TCP`, `PIECES_TRANSIT_Z`, `CARRY_BOTTOM_Z`, `BASE`, `SPOTS`); each comment says how to measure it. Object models (the pieces, the tower slots) stay in `pieces.py` and `tower.py`.
 
 ## Checks
 

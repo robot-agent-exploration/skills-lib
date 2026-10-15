@@ -13,13 +13,7 @@ import numpy as np
 
 FRAMES = Path('runtime') / 'frames'     # saved frames, relative to the working directory (workspace root)
 
-# Wood: hue 5-30, saturation > 50 (table: saturation < 25).
-WOOD_H = (5, 30)
-WOOD_S_MIN = 50
-WOOD_V_MIN = 40
-
-# Wrist camera in the TCP frame (fixed; from meta.json): t = (-0.0725, 0.0305, -0.0804).
-CAM_IN_TCP = np.array([-0.0725, 0.0305, -0.0804])
+from bandu_params import WOOD_H, WOOD_S_MIN, WOOD_V_MIN, CAM_IN_TCP  # hyper-parameters: bandu_params.py
 
 
 def camera_offset(yaw):

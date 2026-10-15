@@ -13,7 +13,7 @@ if str(_Path(__file__).resolve().parent) not in _sys.path:
 
 from pieces import PIECES, hand_conflicts
 
-BASE = dict(center=(0.5245, 0.032), axis=(0.0, 1.0), top_z=0.110, half_len=0.079, half_wid=0.028)
+from bandu_params import BASE, MAX_OPENING_SPREAD, SPOTS  # hyper-parameters: bandu_params.py
 
 # piece -> (offset along the base axis, support piece or None for the base top,
 #           bottom height above the base top when seated, how it goes on)
@@ -30,23 +30,11 @@ SLOTS = {
 # supports whose opening the wrist camera measures before something is inserted into them:
 # rim height above the support's bottom, opening and rim radii (m)
 OPENINGS = {'urn': dict(rim=0.0455, r_in=0.010, r_out=0.013)}
-MAX_OPENING_SPREAD = 0.006    # the two views must agree this well, else the support's xy is used
 
 # low pieces first (the hand must not sweep over tall stacks); a piece only after its support
 ASSEMBLY_ORDER = ['ring', 'barrel', 'slant', 'goblet', 'urn', 'dowel', 'knob']
 DISASSEMBLY_ORDER = ASSEMBLY_ORDER[::-1]
 
-# Where the disassembly puts each piece (picked with grasps at yaw 0 and 90, so the hand's
-# cross-shaped footprint around each spot is kept clear of taller pieces; see check_plan()).
-SPOTS = {
-    'knob':   (0.42, 0.20),
-    'dowel':  (0.39, -0.03),
-    'urn':    (0.64, 0.22),
-    'goblet': (0.62, -0.15),
-    'barrel': (0.45, -0.17),
-    'ring':   (0.66, 0.06),
-    'slant':  (0.53, -0.25),     # bottom centre; it stands leaning towards +y
-}
 
 # piece footprint radius (m) and height above its bottom (m) for the hand-footprint check
 SHAPE = {

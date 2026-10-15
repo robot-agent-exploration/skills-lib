@@ -29,14 +29,10 @@ ROOT = Path('.')            # the working directory: the workspace root (harness
 STATE_PATH = ROOT / 'output' / 'bandu' / 'state.json'
 RUNS = ROOT / 'output' / 'runs'
 
-GRASP_YAW = math.pi / 2      # final grasp closes along base x (the first, centring grasp along y)
-PRIOR_MATCH_R = 0.03         # a recorded table position is confirmed by a cluster this close (m)
-PICK_ATTEMPTS = 2            # tested: 1 retry after re-localizing
-TABLE_PLACE_TOL = 0.010      # placing on the table: contact this close to the table model (m)
-SPOT_CLEAR_R = 0.07          # a table spot is free if no cluster centre is this close (m)
-ALT_SPOTS = [(0.42, -0.30), (0.62, -0.30), (0.52, 0.30), (0.40, 0.30), (0.66, 0.30), (0.52, -0.24)]
-MIN_GRIPPER_SPAN = 0.075     # homed max_width (0.080 when right; 0.055 after homing on the knob's ball)
-BALL_PICK_YAWS = [math.pi / 2, math.pi / 3, -math.pi / 3, math.pi / 6, -math.pi / 6, 0.0]   # first conflict-free
+from bandu_params import (  # hyper-parameters: bandu_params.py
+    GRASP_YAW, PRIOR_MATCH_R, PICK_ATTEMPTS, TABLE_PLACE_TOL, SPOT_CLEAR_R, ALT_SPOTS, MIN_GRIPPER_SPAN,
+    BALL_PICK_YAWS,
+)
 
 
 # ----------------------------------------------------------------------------- record
