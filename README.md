@@ -37,7 +37,7 @@ per skill.
 | Branch | Robot | Skills | Status |
 | --- | --- | --- | --- |
 | [`rby1`](https://github.com/robot-agent-exploration/skills-lib/tree/rby1) | Rainbow RB-Y1: wheeled base, 6-joint torso, two 7-DoF arms, grippers, head ZED 2i | bimanual box and bucket pick-and-place, office-chair tuck, cup stacking, whole-body hand reach, and a six-step room tidy that composes them | ✅ 6 skills |
-| [`franka`](https://github.com/robot-agent-exploration/skills-lib/tree/franka) | Franka FR3: one 7-DoF arm, Franka Hand, two exterior cameras and a wrist camera | find the cube, air fryer, wipe the table, peg-in-hole, Bandu tower | 🚧 coming soon |
+| [`franka`](https://github.com/robot-agent-exploration/skills-lib/tree/franka) | Franka FR3: one 7-DoF arm, Franka Hand, two exterior cameras and a wrist camera | find the cube, air fryer, wipe the table, peg-in-hole, Bandu tower | ✅ 5 skills |
 
 Each library's harness lives in the RAX repository, which also documents the robot's
 tools: [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow)
