@@ -104,13 +104,14 @@ carries over: the steps, the motion and contact strategy in the object's or targ
 frame, and the checks between steps, with the scene description as input from a
 perception function callers may replace. The environment setup (camera parameters, the
 robot's postures, limits and workspace) is read from the harness at run time, never copied
-from the session that wrote the skill; what the harness does not provide is measured or
-passed in.
+from the session that wrote the skill. What the harness does not report, such as the
+surfaces around the robot, is perceived by the robot itself.
 
 **Keep hyper-parameters in one list**, separate from the logic (for example
 `code/params.py`), each with what it controls, its unit, its tested range and how it was
-set, so a new task or setup knows where to adjust it. Say in `## When to use` and in each
-run's `conditions` which setups were tested.
+set. Mark the values that describe the setup as values to calibrate, with how to measure
+them, so another agent in a new task or setup knows what to check and where to adjust it.
+Say in `## When to use` and in each run's `conditions` which setups were tested.
 
 **Cut the task into primitives**: perception (frame -> pose and size), positioning (reach
 pose), grasping, transport, placing, release and retreat. Split where the robot is in a
