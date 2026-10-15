@@ -12,9 +12,10 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import chair_ctl as C  # noqa: E402
 
-RELIEVE_PCT = 90.0       # a wrist / forearm joint above this between turn steps -> relieve that side
-ABORT_PCT = 125.0        # still above this after relief -> stop
-WRIST_ABORT_N = 55.0
+from office_chair_tuck_params import (  # hyper-parameters: office_chair_tuck_params.py
+    CHAIR_MOVES_RELIEVE_PCT as RELIEVE_PCT, CHAIR_MOVES_ABORT_PCT as ABORT_PCT,
+    CHAIR_MOVES_WRIST_ABORT_N as WRIST_ABORT_N,
+)
 
 
 def relieve(ctx, side, log=print):

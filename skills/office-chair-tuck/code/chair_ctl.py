@@ -27,19 +27,12 @@ _spec = _ilu.spec_from_file_location('oc_reach', _P(__file__).resolve().parents[
 OC = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(OC)
 
-TORSO_ZERO = [0.0] * 6
-PITCH = math.radians(-45)
-FINGER = 0.20            # open fingertips' middle along ee -z (robot-interface "Custom fingers")
-HAND_HALF = 0.10         # hands at bar centre ± this along the bar (tested 0.10)
-GRASP_DEEPER = 0.04      # v3: the ee goes this much further along the fingers than 'tips' middle on the bar centre':
-                         # at 0 the fingers bit only the bar's top edge (9-13 mm, operator: "missed", "be deeper");
-                         # 0.04 deeper closed around the whole bar (26 / 35 mm), 2026-10-09 compositional session
+from office_chair_tuck_params import (  # hyper-parameters: office_chair_tuck_params.py
+    TORSO_ZERO, PITCH, FINGER, HAND_HALF, GRASP_DEEPER, RELIEVE_PCT, ABORT_PCT, WRIST_ABORT_N, UP_POSE,
+    READY_ARM, ROLL_STEP, STANDOFF, PRE_DIST, CLEAR_R,
+)
 PRE_BACK, PRE_UP = 0.10, 0.04
 GRIP_A, GRIP_SOFT_A = 0.4, 0.25
-RELIEVE_PCT = 85         # a wrist joint above this after closing -> relieve and re-close softly
-ABORT_PCT = 110          # any joint above this while moving the chair -> stop
-WRIST_ABORT_N = 55       # wrist force change (N) while moving the chair -> stop
-UP_POSE = {'right': (0.40, -0.30, 1.30), 'left': (0.40, 0.30, 1.30)}   # hands up, fingers clear of the chair
 
 
 def log_default(*a):
@@ -151,11 +144,6 @@ def bar_grasp_targets(prof, half=HAND_HALF, finger=FINGER):
         out[side] = {'bar': bar_c.round(4).tolist(), 'yaw_deg': round(math.degrees(yaw), 1), 'quat': quat,
                      'pre': pre.round(4).tolist(), 'grasp': grasp.round(4).tolist(), 'f': f.round(4).tolist()}
     return out
-
-
-# ---------- arm motions ----------
-READY_ARM = {'right': [-0.7854, -0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0],
-             'left': [-0.7854, 0.5236, 0.0, -1.5708, 0.0, 0.7854, 0.0]}
 
 
 def arm_ik(ctx, targets, torso=TORSO_ZERO):
@@ -276,9 +264,6 @@ def grasp_bar(ctx, prof, log=log_default):
     s = status(ctx)
     return {'ok': max_load(s) < 100, 'why': '' if max_load(s) < 100 else f'loads {loads(s)}', 'widths': widths,
             'loads': loads(s), 'targets': T, 'wrist_base': {k: v.round(1).tolist() for k, v in base.items()}}
-
-
-ROLL_STEP = 0.11          # wrist-roll correction while the gripper is open (trial 2: 108-113 % -> 35-45 %)
 
 
 def relieve_wrist_roll(ctx, log=log_default):
@@ -475,12 +460,6 @@ def measure(ctx, log=log_default):
     yaw = chair_yaw(prof) if prof.get('ok') else None
     return {'ok': bool(prof.get('ok')), 'frame': fid, 'profile': prof, 'desk': desk,
             'chair_yaw': None if yaw is None else round(yaw, 3), 'why': prof.get('why', '')}
-
-
-# ---------- approach the chair from afar (Gemini + depth) ----------
-STANDOFF = 0.88          # base origin to chair column when grasping (bar front ≈0.60-0.65 ahead)
-PRE_DIST = 1.40          # pre-pose on the chair axis, column distance
-CLEAR_R = 0.75           # robot axle path must stay this far from the chair column
 
 
 def find_chair(ctx, log=log_default, heads=((0.0, 0.5), (-0.45, 0.5), (0.45, 0.5))):

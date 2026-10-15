@@ -28,9 +28,7 @@ import chair_ctl as C  # noqa: E402
 
 ROOT = C.geom.ROOT
 STATE = ROOT / 'output' / 'push_chair_state.json'
-TUCK_GAP = 0.42          # bar (front surface) to desk front edge when tucked: armrests just under the edge (M1, P2)
-SQUARE_TOL = 0.06        # rad: chair yaw below this is left to the grasp's tangent yaws
-CENTRE_TOL = 0.06        # m: lateral bar offset below this is not corrected
+from office_chair_tuck_params import TUCK_GAP, SQUARE_TOL, CENTRE_TOL  # hyper-parameters: office_chair_tuck_params.py
 
 
 def _load():
