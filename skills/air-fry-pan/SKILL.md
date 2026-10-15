@@ -162,9 +162,9 @@ with Context() as ctx:
   `calls.jsonl` holds every tool call and reply, the frame id of each tag (initial, top_view, after_open,
   after_drop, after_ball, before_close, before_fingertip_push, after_close) and plan decisions (banana_plan,
   descent_residual, fingertip_push). The CLI equivalent is
-  `python <skill>/code/controller.py --steps ... [--resume <run>]`.
+  `PYTHONPATH=<skill>/code python -m air_fry_pan.controller --steps ... [--resume <run>]`.
 
-Modules (sibling imports; `run.py` and `controller.py` put `code/` on `sys.path`):
+Modules (the package `code/air_fry_pan/`; they import each other relatively and `run.py` puts `code/` on `sys.path`):
 - `controller.py`: the steps and their planning (`plan_ik`, `check_joint_path`, `cart_path_ok`, `descend_to_grasp`,
   `view_from`, `Scene`).
 - `perception.py`: frame in, data out, no motion. `locate_fryer`, `locate_fryer_top`, `handle_state`,
@@ -219,9 +219,9 @@ Left out:
 - `left_cam_correction.json`: see above.
 - The session's offline analysis scripts.
 
-**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}`. `controller.ROOT` and `geom.FRAMES` now resolve against the working directory instead of the session's `code/airfry/` layout. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/air_fry_pan_params.py` (2026-10-15).
+**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}`. `controller.ROOT` and `geom.FRAMES` now resolve against the working directory instead of the session's `code/airfry/` layout. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/air_fry_pan/params.py` (2026-10-15).
 
-**Hyper-parameters** are in one list, `code/air_fry_pan_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`DROP_Z`, `PERC_CAMS`, `VIEW_CAMS`, `BALL_DROP_Z`, `TABLE_VIEW`, `USABLE_CAMERAS`, `HOME`, `MAX_JOINT_STEP`, `JOINT_TARGET_MARGIN`, `TABLE_Z`, `FRYER_REGION`); each comment says how to measure it.
+**Hyper-parameters** are in one list, `code/air_fry_pan/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`DROP_Z`, `PERC_CAMS`, `VIEW_CAMS`, `BALL_DROP_Z`, `TABLE_VIEW`, `USABLE_CAMERAS`, `HOME`, `MAX_JOINT_STEP`, `JOINT_TARGET_MARGIN`, `TABLE_Z`, `FRYER_REGION`); each comment says how to measure it. The modules are the package `code/air_fry_pan/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `air_fry_pan` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m air_fry_pan.<module>`.
 
 ## Checks
 - perceive: the preconditions above. Reported values: protrusion 0.047-0.059 closed, arm top 0.256-0.265, banana

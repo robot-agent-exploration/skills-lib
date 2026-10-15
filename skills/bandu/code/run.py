@@ -22,8 +22,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import controller  # noqa: E402
-import tower  # noqa: E402
+from bandu import controller  # noqa: E402
+from bandu import tower  # noqa: E402
 
 RUNS = Path('output') / 'runs'
 

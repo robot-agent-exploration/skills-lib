@@ -16,8 +16,8 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(Path.cwd()))                       # workspace root (runtime/frames/)
 sys.path.insert(0, str(HERE))
-import controller as C  # noqa: E402
-import shuffle  # noqa: E402
+from find_the_cube import controller as C  # noqa: E402
+from find_the_cube import shuffle  # noqa: E402
 
 
 def load_recording(d):

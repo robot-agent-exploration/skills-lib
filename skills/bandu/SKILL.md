@@ -138,7 +138,7 @@ Returns `{ok, measured, why}`; `measured` holds the controller's report: `done` 
 `frame`, `lost`; disassembly `verify` (points per slot); survey `table`, `on_tower`, `unknown`, `frame`. Every
 call writes `output/runs/<timestamp>/log.txt` (one line per grasp width, contact error, probe, alignment step,
 frame id) and `report.json`; the piece record is `output/bandu/state.json`; the Gemini tile sheet is
-`output/runs/last_labels.png`. `python3 <skill>/code/controller.py assemble|disassemble|survey [--fresh] [--only N]`
+`output/runs/last_labels.png`. `PYTHONPATH=<skill>/code python3 -m bandu.controller assemble|disassemble|survey [--fresh] [--only N]`
 does the same from a shell.
 
 Modules (the robot only through `ctx`):
@@ -166,16 +166,17 @@ Modules (the robot only through `ctx`):
 Changes since the runs (format only, no behaviour change): `controller.py`, `exterior.py`, `perception.py` take
 `output/` and `runtime/frames/` relative to the working directory instead of two folders above the file (the
 session layout `code/bandu/`); the helper modules put their own folder on `sys.path` so they load from the skill
-folder; `run.py` is new: the smallest wrapper that returns `{ok, measured, why}`, writes the log and report like the
+folder (since 2026-10-15 they are the package `code/bandu/` and import each other relatively); `run.py` is
+new: the smallest wrapper that returns `{ok, measured, why}`, writes the log and report like the
 session's command line, and applies (then restores) the optional base and spot overrides. Left out: `geom.py`,
 `look.py`, `triangulate.py` (manual-phase camera helpers the entry never imports), the code README (folded in
 here) and the one-off scripts in the session's `output/scratch/` (for example `reseat_urn.py`,
 `insert_held_knob.py`). Module names are generic (`motion`, `pieces`, `tower`, `perception`): do not load another
 skill with the same module names in the same Python process.
 
-**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}` and applies the optional base / spot overrides. Output and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/bandu_params.py` (2026-10-15).
+**Changed since the session's runs:** `code/run.py` is new: it wraps the session's `controller.main` to return `{ok, measured, why}` and applies the optional base / spot overrides. Output and frame paths now resolve against the working directory and sibling imports against the skill's `code/` folder. These changes were checked offline only (every module imports with a stubbed `api.runtime`); they have not run on the robot. No motion, perception or threshold changed. The hyper-parameters later moved unchanged into `code/bandu/params.py` (2026-10-15).
 
-**Hyper-parameters** are in one list, `code/bandu_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TABLE_FROM_BASE`, `ALT_SPOTS`, `TABLE_Z`, `REGION`, `TCP_Z_MIN`, `TRANSIT_Z`, `MAX_STEP`, `HOME`, `MAX_JOINT_STEP`, `CAM_IN_TCP`, `PIECES_TRANSIT_Z`, `CARRY_BOTTOM_Z`, `BASE`, `SPOTS`); each comment says how to measure it. Object models (the pieces, the tower slots) stay in `pieces.py` and `tower.py`.
+**Hyper-parameters** are in one list, `code/bandu/params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TABLE_FROM_BASE`, `ALT_SPOTS`, `TABLE_Z`, `REGION`, `TCP_Z_MIN`, `TRANSIT_Z`, `MAX_STEP`, `HOME`, `MAX_JOINT_STEP`, `CAM_IN_TCP`, `PIECES_TRANSIT_Z`, `CARRY_BOTTOM_Z`, `BASE`, `SPOTS`); each comment says how to measure it. Object models (the pieces, the tower slots) stay in `pieces.py` and `tower.py`. The modules are the package `code/bandu/` (moved there on 2026-10-15; only the imports changed: the modules import each other relatively): import it as `bandu` with `code/` on `sys.path`, or run a module from the workspace root with `PYTHONPATH=<skill>/code python -m bandu.<module>`.
 
 ## Checks
 

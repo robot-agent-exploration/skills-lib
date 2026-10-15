@@ -32,10 +32,10 @@ sys.path.insert(0, str(HERE))
 
 import numpy as np
 
-import perception as P
-import steps as S
+from swipe_table import perception as P
+from swipe_table import steps as S
 
-from swipe_table_params import (  # hyper-parameters: swipe_table_params.py
+from swipe_table.params import (  # hyper-parameters: swipe_table/params.py
     MAX_PASSES, STAIN_MARGIN, RESIDUE_MARGIN, VERIFY_ROI_MARGIN, CLEAN_AREA_M2, CLEAN_AREA_NOREF_M2,
     CLEAN_WRIST_M2, SOAP_BEFORE_PASS, STAIN_PRESENT_M2, POUR_ASKS, STORED_REFERENCE, TOWEL_SPOT_MIN_DIST,
 )
