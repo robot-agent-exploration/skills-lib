@@ -42,7 +42,8 @@ git push origin <branch>
 The script builds the branch as one orphan commit from
 [`templates/robot-branch/`](templates/robot-branch/): a `README.md` describing the robot
 (the template's, with the name filled in, or the README given, written from the issue),
-an `INDEX.md` with the table header, an empty `skills/`, and the
+an `INDEX.md` with the table header, an empty `skills/` whose `.gitattributes` merges
+appended runs from both sides, and the
 [`check-skills` workflow](templates/robot-branch/.github/workflows/check-skills.yml) that
 runs the checker on every push and pull request. It refuses a name that is taken locally or
 on `origin`, and it leaves your working tree alone.
@@ -74,4 +75,4 @@ and the skill-library tools: see the RAX [real-robot adaptation
 guide](https://github.com/robot-agent-exploration/rax/blob/main/docs/REAL_ROBOT_ADAPTATION.md#a-skill-library-that-persists-across-sessions),
 with [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow) as
 the reference. Section 5 of CONTRIBUTING.md shows how to start the harness's library from
-the branch and publish what its sessions learn.
+the branch, take in what other labs merge into it, and publish what its sessions learn.

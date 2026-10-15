@@ -28,6 +28,7 @@ skills/<slug>/
   code/*.py                       helpers it imports (relative to code/)
   evidence/runs.jsonl             one JSON object per run of the code
   evidence/images/*.jpg           visual references (at most 400 kB each, e.g. 640 px JPEG)
+skills/.gitattributes             merges runs.jsonl by keeping the lines of both sides
 .github/workflows/check-skills.yml  runs the checker from main on pushes and pull requests
 ```
 
@@ -322,7 +323,8 @@ directly instead of a fork.
 
 On a conflict, merge `upstream/<embodiment>` into your branch, keep **both** sides'
 `runs.jsonl` lines, reconcile the text (the higher `version` wins only when its evidence
-supports it), and commit.
+supports it), and commit. Runs appended on both sides merge without a conflict:
+`skills/.gitattributes` tells git to keep the lines of both.
 
 **From the RAX harness.** The harness keeps a local library per robot
 (`<artifact root>/skill-library/<robot>/`, or `$RAX_SKILL_LIBRARY/<robot>`; branch
@@ -331,7 +333,7 @@ supports it), and commit.
 to publish what the sessions learned:
 
 ```bash
-lib=<artifact root>/skill-library/<robot>
+lib=<artifact root>/skill-library/<robot>    # an absolute path
 git clone -b <embodiment> -o upstream https://github.com/robot-agent-exploration/skills-lib.git "$lib"
 git -C "$lib" checkout -b main
 # ... sessions run and merge ...
@@ -341,6 +343,26 @@ git -C "$lib" push fork main:contrib/<embodiment>/<lab-or-date>
 
 and open a pull request into `<embodiment>` as above. The harness's merge commits
 (`Merge session/<session>: ...`) carry over.
+
+**Taking in other labs' skills.** Your local library gets what other labs merged into
+`<embodiment>` only when you merge it in. Do it before starting sessions, so they start
+from it, and before publishing, so your pull request merges cleanly. Merge in a scratch
+clone, never in the library itself: the merge tool works in the library and aborts any
+merge it finds there unfinished. Then fast-forward the library while holding the merge
+tool's lock, so the update never lands in the middle of a session's merge:
+
+```bash
+git clone -q "$lib" sync && cd sync
+git pull --no-rebase https://github.com/robot-agent-exploration/skills-lib.git <embodiment>
+# on a conflict: resolve it as above (keep both sides' runs.jsonl lines) and commit
+python3 ../check_skills.py .                                            # the checker from section 4
+flock "$lib/.git/rax-merge.lock" git -C "$lib" pull --ff-only "$PWD" main
+# if a session merged in the meantime this refuses: git pull --no-rebase origin main, then retry it
+cd .. && rm -rf sync
+```
+
+Running sessions take the update the next time they merge the library's `main` into their
+branch.
 
 Merge at least when a skill is first automated (as `draft`), when it becomes `verified` or
 changes, and always before a session ends, so nothing learned is lost.
