@@ -3,11 +3,7 @@ import json
 import time
 
 Q_DOWN = [1.0, 0.0, 0.0, 0.0]
-Z_FLOOR = 0.11          # never command the TCP below this while pressing (fingertips ~9 mm lower)
-PRESS_DEPTH = 0.012     # command this far below the measured contact height (light press)
-PRESS_TOL_MM = 20.0
-STROKE_TIMEOUT_S = 15.0
-MAX_REFUSED = 3          # refused scrub waypoints tolerated per scrub
+from swipe_table_params import Z_FLOOR, PRESS_DEPTH, PRESS_TOL_MM, STROKE_TIMEOUT_S, MAX_REFUSED  # hyper-parameters: swipe_table_params.py
 
 
 def _error_state(exc):

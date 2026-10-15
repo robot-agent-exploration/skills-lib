@@ -35,20 +35,10 @@ import numpy as np
 import perception as P
 import steps as S
 
-MAX_PASSES = 3
-STAIN_MARGIN = 0.035        # gripper path beyond the stain bbox on pass 1 (droplets nearby)
-RESIDUE_MARGIN = 0.015      # beyond the residue bbox on later passes
-VERIFY_ROI_MARGIN = 0.15    # residue search area beyond everything wiped (smears travel)
-CLEAN_AREA_M2 = 4e-4        # residue below 4 cm2 (vs clean reference) counts as clean
-CLEAN_AREA_NOREF_M2 = 8e-4
-CLEAN_WRIST_M2 = 3e-4       # wrist-camera residue (thin streaks) below 3 cm2 counts as clean
-SOAP_BEFORE_PASS = 3        # ask the operator for water + soap before this pass and later ones
-STAIN_PRESENT_M2 = 3e-4     # a stain above 3 cm2 at the start means the operator already poured
-POUR_ASKS = 3               # ask the operator to pour at most this many times
-# Clean table seen from home with fixed exterior cameras (2026-10-06 09:35), used when the run
-# starts with a stain already on the table; checked against the live frame before use.
-STORED_REFERENCE = '20261006093511e0ce16'
-TOWEL_SPOT_MIN_DIST = 0.12  # park towel at least this far (x/y gap) from the wiped region
+from swipe_table_params import (  # hyper-parameters: swipe_table_params.py
+    MAX_PASSES, STAIN_MARGIN, RESIDUE_MARGIN, VERIFY_ROI_MARGIN, CLEAN_AREA_M2, CLEAN_AREA_NOREF_M2,
+    CLEAN_WRIST_M2, SOAP_BEFORE_PASS, STAIN_PRESENT_M2, POUR_ASKS, STORED_REFERENCE, TOWEL_SPOT_MIN_DIST,
+)
 
 POUR_MESSAGE = (
     "Ready for the soy sauce. Please pour about a tablespoon of soy sauce onto the table "
