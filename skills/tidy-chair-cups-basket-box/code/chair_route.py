@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 import chair_ctl as C  # noqa: E402
 import chair_moves as CM  # noqa: E402
 
-CHAIR_EXTRA = (0.50, -0.36, 1.24, 0.36)   # held chair box (x0, y0, x1, y1) in the base frame for sweep_check
+from tidy_chair_cups_basket_box_params import CHAIR_EXTRA  # hyper-parameters: tidy_chair_cups_basket_box_params.py
 
 
 def run(ctx, moves, log=print):

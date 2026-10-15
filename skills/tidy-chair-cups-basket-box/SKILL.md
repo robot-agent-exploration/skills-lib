@@ -99,6 +99,8 @@ Modules: `sweep_check.py`, `scene_map.py` (depth frames -> odometry obstacle poi
 `chair_route.py`, `drop.py`. CLI: `python3 skill-library/skills/tidy-chair-cups-basket-box/code/run.py <step>
 '<json args>'`.
 
+**Hyper-parameters** are in one list, `code/tidy_chair_cups_basket_box_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. The steps' own hyper-parameters are in the skills it uses.
+
 ## Checks
 
 - Chair parked: image shows it against the wall left of the desk, not touching the desk; tucked: armrests at /
