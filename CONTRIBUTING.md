@@ -92,9 +92,34 @@ call sub-task skills and declare them in `uses:`.
 
 ## 3. Make skills modular, so new tasks can compose them
 
-Write every skill so that a later session can reuse its pieces for a task nobody has seen
-yet: "pick a box from the floor" should serve "put the box on a shelf", "hand the box to a
-person" and "stack two boxes" without being rewritten.
+A skill is reused on the **same robot** in setups its author never saw: the cameras moved,
+recalibrated or replaced, another room, surface or layout, other objects of the same kind,
+and other tasks that call it as one step. Write every skill so that a later session can
+reuse its pieces for a task nobody has seen yet: "pick a box from the floor" should serve
+"put the box on a shelf", "hand the box to a person" and "stack two boxes" without being
+rewritten.
+
+**Keep only the manipulation logic; take perception and control parameters as inputs.**
+The skill holds what stays the same across setups: the order of steps, the motion and
+contact strategy written in the object's or target's frame (standoffs, approach
+directions, grasp offsets, lift heights), and the checks between steps. Everything that
+depends on the setup comes in as an input:
+
+- **perception parameters**: camera intrinsics and poses are read from each frame's
+  metadata at run time, never stored in the skill; image regions come from projecting
+  base-frame regions through them, and thresholds are in metric units, not pixels; no
+  stored frame ids, reference images or calibration corrections. Objects, surfaces and
+  obstacles come from a perception function the skill ships with and a caller may replace,
+  or from the agent's own verified observation;
+- **control parameters**: object poses and sizes, surface heights, view and approach poses,
+  speeds, forces and tolerances are arguments, with the tested values as defaults and
+  their tested ranges listed in `## Code`;
+- before contributing, look for constants that held only in the session's setup (pixel
+  coordinates, a camera chosen for where it stood, positions measured once) and turn each
+  into an input;
+- `## When to use` and each run's `conditions` say which setups were tested (camera
+  placement, scene, objects, task), so a later session knows how far the skill has been
+  shown to transfer.
 
 **Cut the task into primitives**: perception (frame -> pose and size), positioning (reach
 pose), grasping, transport, placing, release and retreat. Split where the robot is in a
@@ -142,12 +167,6 @@ stable, describable state; never in the middle of a contact.
 **Prefer the robot's own tools inside primitives** (whole-body IK, Cartesian moves,
 guarded moves, the planning tools) over hand-written solvers: they are measured, and they
 improve without the skill changing.
-
-**Model the invariant motion, take the scene as input.** Write the motion in the object's
-or target's frame (standoffs, approach directions, grasp offsets, contact strategy), never
-in one run's base-frame coordinates. Take a scene description (object pose, size and kind,
-support height, obstacles) from a perception function the skill ships with and that a
-caller may replace. Say in `## When to use` and the evidence which variations were tested.
 
 **Leave room for the agent's perception.** A skill runs in scenes its author never saw, so
 it must not be a blind script:
@@ -342,6 +361,8 @@ Sessions that ran before this library existed kept their procedures in the sessi
 - keep the code as it ran on the robot; limit refactoring to what the format needs (paths,
   an entry wrapper, removing one-off scripts) and say in `## Code` what changed since the
   runs;
+- list in `## Code` the constants that still tie the code to the session's setup (section
+  3), so a later contributor can turn them into inputs;
 - take the runs from the session's records into `evidence/runs.jsonl` with
   `"commit": "pre-library"` and frames from the session as images;
 - set the status from that evidence: runs of code that has since changed do not count
