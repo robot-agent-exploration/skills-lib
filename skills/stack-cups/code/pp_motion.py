@@ -42,17 +42,10 @@ def _load_oc_reach():
 
 OC = _load_oc_reach()
 
-CLOSE_A = 0.5
-TOUCH_N = 5.0
-STOP_N = 8.0
-LIFT_CHECK = 0.04
-HELD_RISE = 0.02
-CARRY = {'left': (0.40, 0.30, 1.12), 'right': (0.40, -0.30, 1.12)}
-CLEAR = {'left': (0.34, 0.33, 1.15), 'right': (0.34, -0.33, 1.15)}     # pitched -45°: arms out of the camera view
+from stack_cups_params import (  # hyper-parameters: stack_cups_params.py
+    CLOSE_A, TOUCH_N, STOP_N, LIFT_CHECK, HELD_RISE, CARRY, CLEAR, TORSO, BUCKET_DIST, DESK_EDGE,
+)
 DROP_DX, DROP_Z, DROP_PITCH = 0.09, 0.69, -30
-TORSO = {'mid': [0.0, 0.7854, -1.5708, 0.7854, 0.0, 0.0], 'lowest': [0.0, 1.2, -2.4, 1.2, 0.0, 0.0]}
-BUCKET_DIST = 0.62        # bucket centre ahead of the base origin at the drop stance (bumper 0.304, near rim 0.47)
-DESK_EDGE = 0.215         # desk front edge ahead of the base origin for reaching (bumper under the top; torso clear)
 SIGN = {'left': 1.0, 'right': -1.0}
 # move_arm: 'oc' = the controller's optimal control (v2), 'joint' = v1 local IK + joint moves. Trial 2 (2026-10-10):
 # the OC pre-grasp from `ready` to fingers-down yaw -165 tripped left_arm_6 at 166 % on its first waypoint -> 'joint'

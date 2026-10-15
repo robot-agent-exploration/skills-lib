@@ -25,7 +25,7 @@ import pp_motion as M  # noqa: E402
 from api.runtime import Context  # noqa: E402
 
 ST = ROOT / 'output' / 'cup_pick_staged.json'
-DESK_LOOK = (0.50, 0.10, 0.80)
+from stack_cups_params import DESK_LOOK  # hyper-parameters: stack_cups_params.py
 
 
 def main(ctx, stage, args):

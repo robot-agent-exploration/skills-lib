@@ -75,6 +75,8 @@ Trial-3 additions: `pick_staged.py pre|down|close` (staged rim pick, agent looks
 `run_cups.py align/insert` through output/cup_state.json) and `banana_pick.py pre|down|close` (banana at its
 middle, closing across the tangent, fingers tilted along it). pp_cups.pick_cup takes STACK_CUPS_TORSO (default mid).
 
+**Hyper-parameters** are in one list, `code/stack_cups_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`TIP`, `TORSO_POS`, `TIP_LOW`, `GRIP_C`, `OPEN_HALF`, `REACH_M`); each comment says how to measure it.
+
 ## Checks
 - scan: both cups located, 0.04 < r < 0.055, lip centre within 1.5 cm of the depth rim-band centre.
 - pick: closed width < 6 mm (thin wall), held check 'held' (lowest point >= desk + 2.5 cm); approach force < 5 N.

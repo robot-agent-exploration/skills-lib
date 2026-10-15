@@ -24,8 +24,7 @@ vlm = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vlm)
 
 OUT = geom.ROOT / 'output' / 'pick_place'
-ELONG_STRAIGHT_DEG = 25      # grasp where the ridge turns less than this within ±3.5 cm
-BOX_MAX_SHORT = 0.085        # an upright box thicker than this does not fit the 0.10 m opening with margin
+from stack_cups_params import ELONG_STRAIGHT_DEG, BOX_MAX_SHORT  # hyper-parameters: stack_cups_params.py
 
 
 def _norm(s):
