@@ -3,8 +3,9 @@
 
     python3 check_skills.py [LIBRARY]                  every skill in the library
     python3 check_skills.py [LIBRARY] --base origin/rby1
-                                                       only what HEAD changed since its merge base
-                                                       with that ref, plus the contribution rules
+                                                       only what changed since the merge base with
+                                                       that ref (commits, uncommitted changes and new
+                                                       files), plus the contribution rules
 
 LIBRARY is a checkout of an embodiment branch (default: the current directory). The
 check reads files as data: code is compiled, never run. Exit status 1 when anything
@@ -191,21 +192,27 @@ def validate_tree(tree, slugs, changed=None, deleted=()):
     return problems
 
 
-def git_paths(tree, base, diff_filter):
-    out = subprocess.run(['git', '-C', str(tree), 'diff', '--name-only', f'--diff-filter={diff_filter}',
-                          f'{base}...HEAD'], capture_output=True, text=True, check=True).stdout
-    return [line for line in out.splitlines() if line]
+def git(tree, *args):
+    return subprocess.run(['git', '-C', str(tree), *args], capture_output=True, text=True, check=True).stdout
+
+
+def changed_paths(tree, base):
+    """Paths changed and deleted since the merge base with `base`, in the working tree (committed or not)."""
+    merge_base = git(tree, 'merge-base', base, 'HEAD').strip()
+    changed = git(tree, 'diff', '--name-only', '--diff-filter=d', merge_base).splitlines()
+    changed += git(tree, 'ls-files', '--others', '--exclude-standard').splitlines()
+    deleted = git(tree, 'diff', '--name-only', '--diff-filter=D', merge_base).splitlines()
+    return sorted(set(filter(None, changed))), sorted(set(filter(None, deleted)))
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('library', nargs='?', default='.', help='checkout of an embodiment branch')
-    parser.add_argument('--base', help='check only what HEAD changed since its merge base with this ref')
+    parser.add_argument('--base', help='check only what changed since the merge base with this ref, committed or not')
     args = parser.parse_args(argv)
     tree = Path(args.library)
     if args.base:
-        changed = git_paths(tree, args.base, 'd')
-        deleted = git_paths(tree, args.base, 'D')
+        changed, deleted = changed_paths(tree, args.base)
         slugs = sorted({p.split('/')[1] for p in changed if p.startswith('skills/') and p.count('/') >= 2})
         problems = validate_tree(tree, slugs, changed, deleted)
     else:
