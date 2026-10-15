@@ -95,4 +95,20 @@ branch yet, follow [NEW_ROBOT.md](NEW_ROBOT.md).
 
 These skills come from sessions of
 [RAX: Scaling Online Exploration for Robot Agents](https://robot-agent-exploration.com/).
-BibTeX is coming soon; until then, please cite the paper as listed on the project website.
+If you use them, please cite:
+
+```bibtex
+@misc{huang2026scaling,
+  title        = {Scaling Online Exploration for Robot Agents},
+  author       = {Huang, Runhan and Zhang, Xiangcheng and Chen, Haoyu
+                  and Li, Yitong and Wang, Yen-Jen and Lyu, Bohan
+                  and Ye, Haotian and Hong, Chuye and Wang, Yixuan
+                  and Su, Chloe and Xiong, Haoyu and Wu, Yangzhen
+                  and Xie, Enze and Manderson, Travis and Ermon, Stefano
+                  and Abbeel, Pieter and Torralba, Antonio and Song, Dawn
+                  and Ye, Weirui and Du, Yilun},
+  year         = {2026},
+  howpublished = {Preprint},
+  url          = {https://robot-agent-exploration.com/}
+}
+```
