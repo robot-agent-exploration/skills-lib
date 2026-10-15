@@ -1,18 +1,42 @@
-# rby1 skill library
+# Rainbow RB-Y1 skill library
 
-Skills agents learned on this robot, kept across sessions. Agents read and use them, and
-add or improve them on their session branch; the harness tool `skill_library_merge`
-checks the format and evidence and merges into `main`. The protocol is the agent skill
-`continual-learning`; the rules the merge enforces:
+Skills that agents learned on a Rainbow Robotics RB-Y1 (model A) and merged into this
+library across sessions, 2026-10-08 to 2026-10-10. Each session read the library, reused
+and improved the skills that matched its task, and merged back what it learned; the
+history of this branch is that record, one `Merge session/<session>: ...` commit per
+merge.
 
-- `INDEX.md`: one row per skill, `| [slug](skills/slug/SKILL.md) | status | what it does | when to use |`.
-- `skills/<slug>/SKILL.md` begins with frontmatter (`name` = the folder name, `description`,
-  `status`: draft | verified | deprecated, `robot`, `entry`: the code file, e.g.
-  `code/run.py`) and has the sections `## When to use`, `## Preconditions`, `## Procedure`, `## Code`, `## Checks`, `## Failure modes`, `## Evidence`.
-- The entry is Python defining `main(ctx, ...)` (ctx: `api.runtime.Context`) that returns
-  `{"ok": bool, "measured": {...}, "why": str}`.
-- `evidence/runs.jsonl`: one JSON object per run of the code with `session`, `date`, `commit`, `outcome`, `unattended`, `conditions`, `checks`, `images`; `images` are
-  paths under `evidence/images/` (jpg / png, at most 400 kB each).
-- At least one image per skill. `verified` needs at least 2 unattended successful
-  runs. A branch may only change `INDEX.md` and files under `skills/`.
-- Never delete another session's skill: set its status to `deprecated` and say why.
+The protocol for using and contributing is [CONTRIBUTING.md on
+`main`](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md).
+The skills are listed in [INDEX.md](INDEX.md).
+
+## The robot
+
+- Wheeled base (differential drive), 6-joint torso, two 7-DoF arms with grippers (custom
+  curved fingers: closed ball 0.195 m, open tips ~0.20 m), 2-DoF head with a ZED 2i RGB-D
+  camera.
+- The code calls the robot through the RAX harness context `ctx` (`api.runtime.Context`)
+  and its `rby1_*` tools: status, observe, joint / body / end-effector moves, the
+  controller's Cartesian and whole-body optimal-control commands, base moves, grippers,
+  dry-run checks and hold. The tools, limits and safety layers are described in
+  [`RBY1.md` on `real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow).
+- Other dependencies: numpy, opencv, shapely and pinocchio in the agent environment, and
+  the harness's Gemini helper (`.agents/skills/gemini/scripts/vlm.py`) for perception.
+
+## The skills
+
+| Skill | What it covers |
+| --- | --- |
+| `bimanual-box-pnp` | a carton between the floor and a table, squeezed between both hands |
+| `bimanual-bucket-rim-pnp` | a 5-gallon bucket off the floor onto a cabinet, pinched by its rim |
+| `office-chair-tuck` | an office chair grasped by its backrest and moved with the base |
+| `stack-cups` | one cup nested into another with a one-hand rim pinch |
+| `oc-hand-reach` | hand poses by the controller's whole-body optimal control, the primitive the others use |
+| `tidy-chair-cups-basket-box` | the six-step room tidy that chains the skills above |
+
+All are `draft`: none has two unattended successful runs of its current code yet
+(`oc-hand-reach` has five, all of version 1; the others at most one). The sessions themselves (transcripts, robot tool calls, camera
+archives) are the RAX RB-Y1 sessions; the frames in `evidence/images/` come from them.
+
+Two earlier box skills (`bimanual-box-squeeze`, `box-floor-to-table-squeeze`) were
+replaced by `bimanual-box-pnp` and removed in 6d1abd9; they are in its parent, b4614fd.
