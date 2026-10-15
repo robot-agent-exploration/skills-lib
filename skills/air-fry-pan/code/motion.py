@@ -7,8 +7,7 @@ import numpy as np
 
 from kin import SAFE_MIN, SAFE_MAX
 
-MAX_JOINT_STEP = 1.4      # rad per move_joints call (service limit 1.5)
-JOINT_TARGET_MARGIN = 0.21  # service rejects targets within 0.2 rad of its limits
+from air_fry_pan_params import MAX_JOINT_STEP, JOINT_TARGET_MARGIN  # hyper-parameters: air_fry_pan_params.py
 
 
 class MotionError(RuntimeError):

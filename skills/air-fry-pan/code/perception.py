@@ -9,9 +9,7 @@ import cv2 as cv
 
 from geom import backproject
 
-TABLE_Z = 0.09
-# Search region for the fryer (generous; robot workspace in front of the base).
-FRYER_REGION = ((0.35, 0.95), (-0.45, 0.30))
+from air_fry_pan_params import TABLE_Z, FRYER_REGION  # hyper-parameters: air_fry_pan_params.py
 
 
 def _pts(F, cams, mask_fn, stride=1):
