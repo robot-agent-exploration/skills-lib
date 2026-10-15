@@ -109,10 +109,12 @@ robot's postures, limits and workspace) is read from the harness at run time, ne
 from the session that wrote the skill. What the harness does not report, such as the
 surfaces around the robot, is perceived by the robot itself.
 
-**Keep hyper-parameters in one list**, separate from the logic (for example
-`code/params.py`), each with what it controls, its unit, its tested range and how it was
-set. Mark the values that depend on the setup as values to calibrate, with how to measure
-them, so another agent in a new task or setup knows what to check and where to adjust it.
+**Keep hyper-parameters in one list**, separate from the logic, each with what it
+controls, its unit, its tested range and how it was set. Put the list in a module named
+after the skill (for example `code/<slug>_params.py`): skills import each other's code, so
+a generic name such as `params.py` can load another skill's file. Mark the values that
+depend on the setup with a `# CALIBRATE:` comment saying how to measure them, so another
+agent in a new task or setup knows what to check and where to adjust it.
 Say in `## When to use` and in each run's `conditions` which setups were tested.
 
 **Cut the task into primitives**: perception (frame -> pose and size), positioning (reach
