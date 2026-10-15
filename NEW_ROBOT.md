@@ -23,6 +23,10 @@ Open an issue with the **New robot** template. It asks for:
   mounted, the base frame the code uses;
 - how the code reaches the robot: the harness and its context object (for RAX,
   `api.runtime.Context`), the tools the skills call, and a link to their documentation;
+- the setup the harness reports, which skills read instead of copying it: camera
+  parameters, named postures, limits and workspace
+  ([CONTRIBUTING.md](CONTRIBUTING.md#3-make-skills-modular-so-new-tasks-can-compose-them)
+  section 3);
 - other dependencies of the skills, and the first skills you plan to contribute.
 
 ## 2. A maintainer creates the branch
@@ -55,7 +59,7 @@ Open a pull request into the new branch from your fork, as
 git fetch upstream
 git checkout -b contrib/<branch>/<topic> upstream/<branch>
 # add skills/<slug>/ and their INDEX.md rows
-python3 check_skills.py . --base upstream/<branch>
+python3 ../check_skills.py . --base upstream/<branch>   # the checker, from CONTRIBUTING.md section 4
 git push -u origin contrib/<branch>/<topic>
 ```
 

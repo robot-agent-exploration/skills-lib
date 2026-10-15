@@ -13,6 +13,8 @@ are mounted, the base frame the code uses. -->
 
 - How the code reaches the robot: <!-- the harness, its context object and the tools the
   skills call, with a link to their documentation -->
+- The setup the harness reports: <!-- camera parameters, named postures, limits and
+  workspace; skills read these instead of copying them -->
 - Other dependencies: <!-- packages, models or services the skills use -->
 
 ## Where the skills came from

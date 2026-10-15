@@ -50,7 +50,8 @@ library skill never changes a limit, a safety rule or what a tool does.
    `draft`; read `deprecated` only to learn why it was retired.
 2. Before running one, check its **Preconditions** against a fresh observation, and its
    tested ranges against your scene. A skill tested on 0.3 m boxes is not evidence for a
-   0.6 m box.
+   0.6 m box. In a setup the skill was not tested in, calibrate the values its
+   hyper-parameter list marks for calibration.
 3. Run its entry and read the returned `{ok, measured, why}`; confirm the result with your
    own observation. A skill that fails is information: record the run as a failure
    (section 4) and say what differed.
@@ -109,7 +110,7 @@ surfaces around the robot, is perceived by the robot itself.
 
 **Keep hyper-parameters in one list**, separate from the logic (for example
 `code/params.py`), each with what it controls, its unit, its tested range and how it was
-set. Mark the values that describe the setup as values to calibrate, with how to measure
+set. Mark the values that depend on the setup as values to calibrate, with how to measure
 them, so another agent in a new task or setup knows what to check and where to adjust it.
 Say in `## When to use` and in each run's `conditions` which setups were tested.
 
@@ -220,7 +221,8 @@ gripper state, what must be visible.
 The steps in order, each with its tool calls and the reason for its parameters.
 
 ## Code
-The entry and how to call it; every parameter with its tested range and default; what it
+The entry and how to call it; every parameter with its tested range and default; where the
+hyper-parameter list is and which of its values to calibrate in a new setup; what it
 returns in `measured`; where it logs.
 
 ## Checks
@@ -282,12 +284,13 @@ Each line of `evidence/runs.jsonl` (append; never rewrite another contributor's 
 When you change a verified skill's behaviour, bump `version`; it stays verified only if
 new unattended runs of the new code meet the bar, otherwise set it back to `draft`.
 
-Before committing, run the checker on your checkout of the embodiment branch:
+Before committing, run the checker on your checkout of the embodiment branch. It lives on
+`main`; keep it outside the checkout so it is not committed with your skills:
 
 ```bash
-curl -sO https://raw.githubusercontent.com/robot-agent-exploration/skills-lib/main/scripts/check_skills.py
-python3 check_skills.py . --base upstream/<embodiment>  # only what you changed, plus the contribution rules
-python3 check_skills.py .                               # the whole library
+curl -so ../check_skills.py https://raw.githubusercontent.com/robot-agent-exploration/skills-lib/main/scripts/check_skills.py
+python3 ../check_skills.py . --base upstream/<embodiment>  # what you changed, committed or not, plus the contribution rules
+python3 ../check_skills.py .                               # the whole library
 ```
 
 ## 5. Commit and merge
@@ -306,7 +309,7 @@ git checkout -b contrib/<embodiment>/<session-or-topic> upstream/<embodiment>
 # add or change skills/<slug>/ and its INDEX.md row
 git add -A && git commit -m "<slug>: what changed"
 git fetch upstream && git merge upstream/<embodiment>     # take in other merges; resolve conflicts
-python3 check_skills.py . --base upstream/<embodiment>
+python3 ../check_skills.py . --base upstream/<embodiment>  # the checker from section 4
 git push -u origin contrib/<embodiment>/<session-or-topic>
 ```
 
@@ -328,12 +331,12 @@ supports it), and commit.
 to publish what the sessions learned:
 
 ```bash
-git clone -b <embodiment> -o upstream https://github.com/robot-agent-exploration/skills-lib.git \
-    runtime/skill-library/<robot>
-git -C runtime/skill-library/<robot> checkout -b main
+lib=<artifact root>/skill-library/<robot>
+git clone -b <embodiment> -o upstream https://github.com/robot-agent-exploration/skills-lib.git "$lib"
+git -C "$lib" checkout -b main
 # ... sessions run and merge ...
-git -C runtime/skill-library/<robot> remote add fork https://github.com/<you>/skills-lib.git
-git -C runtime/skill-library/<robot> push fork main:contrib/<embodiment>/<lab-or-date>
+git -C "$lib" remote add fork https://github.com/<you>/skills-lib.git
+git -C "$lib" push fork main:contrib/<embodiment>/<lab-or-date>
 ```
 
 and open a pull request into `<embodiment>` as above. The harness's merge commits
@@ -350,11 +353,12 @@ Sessions that ran before this library existed kept their procedures in the sessi
 - refactor it into the format above: one folder per task or sub-task, the code under
   `code/` with an entry that defines `main(ctx, ...)`, the session's notes distilled into
   the seven sections;
-- keep the code as it ran on the robot; limit refactoring to what the format needs (paths,
-  an entry wrapper, removing one-off scripts) and say in `## Code` what changed since the
-  runs;
-- note in `## Code` what still depends on the session's setup and where the
-  hyper-parameters are (section 3);
+- keep the behaviour as it ran on the robot; limit changes to what the format needs
+  (paths, an entry wrapper, the hyper-parameter list, removing one-off scripts) and say in
+  `## Code` what changed since the runs;
+- mark in the hyper-parameter list the values that still depend on the session's setup
+  (section 3). Replacing them with values read from the harness or perceived changes
+  behaviour: bump `version`;
 - take the runs from the session's records into `evidence/runs.jsonl` with
   `"commit": "pre-library"` and frames from the session as images;
 - set the status from that evidence: runs of code that has since changed do not count

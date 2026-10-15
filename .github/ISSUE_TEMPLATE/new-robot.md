@@ -16,6 +16,9 @@ request with your skills into it. -->
 **How the code reaches the robot**: the harness and its context object (for RAX,
 `api.runtime.Context`), the tools the skills call, and a link to their documentation.
 
+**The setup the harness reports** (skills read it instead of copying it): camera
+parameters, named postures, limits and workspace.
+
 **Other dependencies** of the skills (Python packages, models, services):
 
 **The first skills you plan to contribute**, and the sessions they come from:
