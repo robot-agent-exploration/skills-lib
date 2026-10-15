@@ -3,8 +3,7 @@ import numpy as np
 
 from ..core import robot
 
-CONTACT_DF_N = 4.5      # |F - F0| that counts as contact (noise ~1 N)
-STEP_M = 0.01
+from ..params import CONTACT_DF_N, STEP_M  # hyper-parameters: boxpnp/params.py
 
 
 def step_until_contact(ctx, side, direction, max_travel=0.08, step=STEP_M, threshold=CONTACT_DF_N, log=print,

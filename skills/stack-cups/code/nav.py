@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'push_chair'))
 import chair_ctl as C  # noqa: E402
 
 AXLE = 0.228
-REAR_R = 0.62        # rear sweep radius about the axle
+from stack_cups_params import REAR_R  # hyper-parameters: stack_cups_params.py
 
 
 def wrap(a):

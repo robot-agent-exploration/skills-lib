@@ -19,12 +19,7 @@ from ..perception import locate as ploc
 from ..perception import sensing
 from ..perception import table as ptable
 
-MARGIN = 0.06            # m around the robot footprint
-SEG_FORWARD = 0.30       # m per closed-loop segment
-SEG_TURN = 0.6           # rad per closed-loop segment
-MAX_HIT_POINTS = 25      # obstacle points (stride 3) inside the swept footprint that stop a segment
-OBST_Z = (0.15, 1.7)
-BORDER_PX = 20           # ignore depth this close to the image border (A3: 18 spurious points at row 708)
+from ..params import MARGIN, SEG_FORWARD, SEG_TURN, MAX_HIT_POINTS, OBST_Z, BORDER_PX  # hyper-parameters: boxpnp/params.py
 
 
 def plan_turn_drive_turn(target_origin, heading):

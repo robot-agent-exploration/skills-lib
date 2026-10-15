@@ -83,6 +83,8 @@ runner, footprint, geom, kin from bimanual-box-pnp). Parameters (tested values):
 y -0.04..+0.045 at rim 0.37, fails at 0.62), TILT 0.6, PINCH_DEPTH 0.05, PRE_DZ 0.10, CLOSE_A 0.35, PINCH_MAX_W 0.015,
 EDGE_IN 0.21, BUMPER_GAP 0.06, TOUCH_DF 4 N. Gemini: ~$0.002-0.003 per call, 2-6 s (one 27 s outlier).
 
+**Hyper-parameters** are in one list, `code/bimanual_bucket_rim_pnp_params.py`; the modules import them from there. They moved there unchanged on 2026-10-15: every value was compared before and after with each module imported offline, and no behaviour changed. In a setup this skill was not tested in, calibrate the values marked CALIBRATE (`PINCH_D`, `TORSO_READY`, `ARM_READY`, `LOAD_STOP`); each comment says how to measure it.
+
 ## Checks
 
 - find_bucket: Gemini mask present, silhouette IoU (0.96-0.98 measured), not touching the border; upright / fully

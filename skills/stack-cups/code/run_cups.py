@@ -29,7 +29,7 @@ import pp_motion as M  # noqa: E402
 import pp_perception as PP  # noqa: E402
 
 STATE = geom.ROOT / 'output' / 'cup_state.json'
-DESK_LOOK = (0.50, 0.10, 0.80)
+from stack_cups_params import DESK_LOOK  # hyper-parameters: stack_cups_params.py
 CUPS = ['silver cup on the left', 'silver cup in the front middle']
 ALIGN_Q = ("The robot's gripper holds a silver cup by its rim above another cup on the desk. Is the bottom of the "
            'hanging cup directly above the opening of the cup below, so that lowering it straight down puts it inside?')

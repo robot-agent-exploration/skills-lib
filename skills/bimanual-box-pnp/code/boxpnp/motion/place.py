@@ -7,8 +7,7 @@ from ..core.runner import StepFailed
 
 from . import carry, squeeze
 
-TOUCH_DFZ_N = 4.0           # vertical (base frame) wrist force change per side = the surface took the object
-STEP_DOWN = 0.01
+from ..params import TOUCH_DFZ_N, STEP_DOWN  # hyper-parameters: boxpnp/params.py
 
 
 def lower_until_contact(rt, torso, z_min, fast_to=None):

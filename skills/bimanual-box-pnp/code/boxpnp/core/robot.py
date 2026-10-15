@@ -5,14 +5,9 @@ import time
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-TORSO_READY = [0, 0.5236, -1.0472, 0.5236, 0, 0]
-TORSO_ZERO = [0, 0, 0, 0, 0, 0]
-TORSO_READY_LEAN = [0, 0.5236, -1.0472, 0.5936, 0, 0]     # ready + 0.07 chest lean (tested)
-ARM_READY = {'right': [-0.7854, -0.5236, 0, -1.5708, 0, 0.7854, 0], 'left': [-0.7854, 0.5236, 0, -1.5708, 0, 0.7854, 0]}
+from ..params import TORSO_READY, TORSO_ZERO, TORSO_READY_LEAN, ARM_READY, MAX_FORWARD_CALL, TORSO_MAX_STEP  # hyper-parameters: boxpnp/params.py
 AXLE_X = 0.228          # the base turns in place about this point (base x)
 BUMPER_X = 0.304
-MAX_FORWARD_CALL = 0.8
-TORSO_MAX_STEP = 1.15   # rad per call (backend cap 1.2)
 
 
 def status(ctx):

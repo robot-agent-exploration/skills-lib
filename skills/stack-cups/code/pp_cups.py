@@ -33,13 +33,10 @@ import pp_motion as M
 import pp_perception as PP
 import pp_vis
 
-CUP_RIM_IN = 0.004        # cup wall inward of the rim 2.4 cm down (straight-ish aluminium cups)
-NEST_RISE = 0.024         # each nested cup's rim stands this much above the one below (measured 0.024-0.026)
-CARRY_CLEAR = 0.06        # held cup's bottom above the target rim while moving over it (0.018 knocked the target over)
-CONTACT_N = 5.0           # wrist force change = the outer finger met the target rim -> release
-ALIGN_TOL = 0.012         # held cup bottom centre within this of the target axis before inserting
-ALIGN_STEPS = 3           # closed-loop xy corrections at most
-CUP_H = 0.112             # cup height if the depth support estimate fails
+from stack_cups_params import (  # hyper-parameters: stack_cups_params.py
+    CUP_RIM_IN, NEST_RISE, CARRY_CLEAR, CONTACT_N, ALIGN_TOL, ALIGN_STEPS, CUP_H, TORSO_POS, LIFT_CUP,
+    HELD_CLEAR, LEFT_ON_DESK,
+)
 HELD = 'silver cup held by the robot gripper'
 
 
@@ -49,9 +46,6 @@ def _res(ok, why='', **kw):
 
 def _down_quat(yaw):
     return G.quat(kin.Rz(yaw))
-
-
-TORSO_POS = {'mid': [0.0, 0.7854, -1.5708, 0.7854, 0.0, 0.0], 'ready': [0.0, 0.5236, -1.0472, 0.5236, 0.0, 0.0]}
 
 
 def set_torso(ctx, goal, log=print):
@@ -164,11 +158,6 @@ def pick_cup(ctx, name, side, look=None, depth=G.RIM_DEPTH, carry_bottom=None, l
             return _res(False, f'raise: {r["why"]}', frames=frames, measured={'pinch': pinch})
     return _res(True, frames=frames, measured={'pinch': pinch, 'rise': rise, 'width': g['measured_width_m'],
                                                'cup': {k: cup[k] for k in ('centre', 'r', 'rim_z', 'height')}})
-
-
-LIFT_CUP = 0.06           # lift before the held check (a 4 cm lift was misjudged as "not risen")
-HELD_CLEAR = 0.025        # held cup's lowest point at least this above the desk = lifted
-LEFT_ON_DESK = 0.015      # lowest point within this of the desk = clearly not lifted -> release and back off
 
 
 def held_check(ctx, fid, support_z, log=print):

@@ -8,10 +8,7 @@ from ..core.runner import Step
 from ..motion import carry, navigation, squeeze
 from ..perception import sensing
 
-STANCE_D = 0.62        # box centre ahead at the table grasp (P1 0.60 with face_blend 0.5; 0.62 box-facing: base 8 cm
-                       # from the top edge, IK ok to 0.62)
-STRAIGHT = 0.35        # straight final leg = the reverse allowed after the grasp (tested 0.35)
-FACE_BLEND = 0.0       # 0: face the box squarely (symmetric squeeze, box hangs level); 1: face the table edge
+from ..params import STANCE_D, STRAIGHT, FACE_BLEND  # hyper-parameters: boxpnp/params.py
 
 
 def steps(box='box', table='table', stance_d=STANCE_D, straight=STRAIGHT, face_blend=FACE_BLEND):

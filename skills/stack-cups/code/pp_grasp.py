@@ -16,17 +16,10 @@ import pinocchio as pin
 
 import kin
 
-TIP_LOW = 0.192
-GRIP_C = 0.175
-OPEN_HALF = 0.05          # open fingers' inner faces at ±0.05 m along ee x (opening 0.10)
-DESK_CLEAR = 0.004        # tips above the support when closing on a lying object (tested 0.003-0.004)
-TOUCH_MARGIN = 0.012      # the force-guarded descent may go this far below the planned height (support error)
-PRE_UP = 0.09             # pre-grasp above the grasp (top grasps)
-BOX_PITCHES = (0, -30, -20, -45)  # fingers down when reachable (near boxes), else tilted forward (deg); tested -30
-BOX_GRIP_DOWN = 0.035     # grip centre below the box top (tested: the tips pinched the top flaps)
-RIM_DEPTH = 0.024         # tips' lowest point below the rim for a rim pinch (tested 0.024 on 4.4-5 cm bowls)
-RIM_IN = 0.010            # wall at that depth, inward of the rim (tapered bowls)
-RIM_ANGLES = (180, 157.5, -157.5, 135, -135, 112.5, -112.5, 90, -90)   # plan_rim_search: rim points tried, deg from +x
+from stack_cups_params import (  # hyper-parameters: stack_cups_params.py
+    TIP_LOW, GRIP_C, OPEN_HALF, DESK_CLEAR, TOUCH_MARGIN, PRE_UP, BOX_PITCHES, BOX_GRIP_DOWN, RIM_DEPTH,
+    RIM_IN, RIM_ANGLES, RIM_PITCHES, RIM_TILT_X, YAW_TIE, REACH_M,
+)
 
 
 def quat(R):
@@ -95,12 +88,6 @@ def plan_box(obj, side, torso, joints):
                         'approach': [((pre + ee) / 2).round(4).tolist()], 'touch': None,
                         'fingers': _fingers(pre, R), 'why': ''}
     return {'ok': False, 'why': f'no IK for the box top grasp: tried {tried}'}
-
-
-RIM_PITCHES = (0, -20, -35)   # fingers tilted forward about a sideways (y) closing axis, for far rims (tested -35)
-RIM_TILT_X = 0.45             # plan_rim: tilt by pitches[-1] only when the fingers-down rim point is farther ahead (m)
-YAW_TIE = 0.2                 # plan_rim: both yaws within this (rad) of equally far from the current yaw -> reach bearing
-REACH_M = 0.69                # backend reach rule: an ee target within 0.69 m of link_<side>_arm_0
 
 
 def Rx(a):

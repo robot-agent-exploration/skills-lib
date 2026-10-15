@@ -22,7 +22,7 @@ from scipy.spatial.transform import Rotation as Rr  # noqa: E402
 from api.runtime import Context  # noqa: E402
 
 ST = ROOT / 'output' / 'banana_pick.json'
-TIP = 0.192
+from stack_cups_params import TIP  # hyper-parameters: stack_cups_params.py
 
 
 def main(ctx, stage, a):

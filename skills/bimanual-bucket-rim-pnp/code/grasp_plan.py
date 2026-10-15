@@ -10,9 +10,7 @@ import numpy as np
 from lib import BOXPNP_CODE  # noqa: F401  (sys.path for boxpnp)
 from boxpnp.core import kin
 
-PINCH_D = 0.20          # m along -z_ee from ee to the middle of the open round fingertips (closed ball 0.195)
-PINCH_DEPTH = 0.03      # m below the rim top
-WALL_R = 0.146          # m: wall radius at the rim (outer lip ~0.152, inner ~0.140)
+from bimanual_bucket_rim_pnp_params import PINCH_D, PINCH_DEPTH, WALL_R  # hyper-parameters: bimanual_bucket_rim_pnp_params.py
 
 
 def grip_rotation(side, tilt, flip=False):

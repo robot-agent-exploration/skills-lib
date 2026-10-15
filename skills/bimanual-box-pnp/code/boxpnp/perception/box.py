@@ -8,15 +8,10 @@ import numpy as np
 
 from ..core.frames import clusters, frame_dir, load
 
-FLOOR_Z_MIN = 0.04
-OBJECT_Z_MAX = 0.45
-GRID = 0.01
-BOX_LONG = (0.28, 0.50)
-BOX_SHORT = (0.10, 0.30)          # far views shrink the short side (0.13 at 3.2 m)
-BOX_TOP_Z = (0.18, 0.34)          # above the support
-CARDBOARD_H = (10, 25)            # OpenCV hue; box top 14-18, orange bucket 6, red backpack 177
-CARDBOARD_S = (55, 185)           # box 90-125, bucket 250, floor 3
-MIN_CARDBOARD_FRAC = 0.45
+from ..params import (  # hyper-parameters: boxpnp/params.py
+    FLOOR_Z_MIN, OBJECT_Z_MAX, GRID, BOX_LONG, BOX_SHORT, BOX_TOP_Z, CARDBOARD_H, CARDBOARD_S,
+    MIN_CARDBOARD_FRAC,
+)
 SELF_X, SELF_Y = 0.36, 0.32       # the robot's own front / knee
 
 

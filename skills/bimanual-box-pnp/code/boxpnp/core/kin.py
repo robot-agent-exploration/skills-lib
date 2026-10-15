@@ -9,7 +9,7 @@ import pinocchio as pin
 ROOT = next((p for p in Path(__file__).resolve().parents if (p / 'robot-model').exists()),
             Path(__file__).resolve().parents[2])
 URDF = ROOT / 'robot-model' / 'model_v1.0.standard.urdf'
-BALL_D = 0.195          # closed round fingers: ball centre along -z_ee (library skill, checked in RGB)
+from ..params import BALL_D, LIMIT_MARGIN  # hyper-parameters: boxpnp/params.py
 
 _model = pin.buildModelFromUrdf(str(URDF))
 _data = _model.createData()
@@ -42,9 +42,6 @@ def ee_and_ball(q):
         out[side] = {'ee': M.translation.copy(), 'R': M.rotation.copy(), 'ball': ball,
                      'quat_xyzw': pin.Quaternion(M.rotation).coeffs().copy()}
     return out
-
-
-LIMIT_MARGIN = 0.2      # rad inside the URDF limits (the backend uses 0.1; real stops can be inside)
 
 
 def _arm_idx(side):

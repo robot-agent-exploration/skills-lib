@@ -13,19 +13,12 @@ from ..perception import sensing
 from . import navigation
 from .touch import step_until_contact
 
-SQUAT = [[0, 0.785, -1.571, 0.855, 0, 0], [0, 1.047, -2.094, 1.117, 0, 0], [0, 1.2, -2.4, 1.27, 0, 0]]
-TORSO_LOW = SQUAT[-1]                       # lowest + 0.07 lean
-BALL_Z_PRE = 0.20                           # balls above the support after the squat (box top 0.263)
-BALL_Z = 0.18                               # touch / squeeze height above the support (tested 0.18)
-STANDOFF = 0.09                             # ball centre starts this far outside the depth end
-MAX_TOUCH_TRAVEL = 0.11
-KNEE_Y = 0.205                              # |ee y| below this when squatting: wrist meets the knee link (model)
-SQUEEZE_MM = 4                              # extra squeeze after both contacts (~1.4 N/mm)
-MIN_SQUEEZE_N = 9.0
-Q_EE = {'right': [-0.187, -0.1618, 0.7327, 0.634], 'left': [0.107, -0.2229, -0.4199, 0.8732]}     # floor grasp
+from ..params import (  # hyper-parameters: boxpnp/params.py
+    SQUAT, TORSO_LOW, BALL_Z_PRE, BALL_Z, STANDOFF, MAX_TOUCH_TRAVEL, KNEE_Y, SQUEEZE_MM, MIN_SQUEEZE_N,
+    Q_EE, Q_CARRY,
+)
 SEED = {'right': [-0.38, -0.5064, 0.9074, -0.9777, -0.215, 0.4984, 0.793],
         'left': [-0.4087, 0.6193, -0.9807, -0.8881, 0.4448, 0.3421, -0.103]}
-Q_CARRY = {'right': [-0.2127, -0.1838, 0.726, 0.6276], 'left': [0.1222, -0.2528, -0.4153, 0.8653]}   # torso zero
 SEED_TABLE = {'right': [-0.6116, -0.5768, 0.7147, -1.4269, -0.4398, 1.1185, 0.9395],
               'left': [-0.6109, 0.8671, -0.8153, -1.3949, 0.7088, 0.8888, -0.2031]}
 

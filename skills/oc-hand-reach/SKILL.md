@@ -71,6 +71,8 @@ Helpers: `quat_yaw_pitch(yaw, pitch)` (R = Rz(yaw) Ry(pitch), fingers along ee -
 (closed-form yaw from the shoulder towards a point, via `rby1_fk`), `slerp`, `R_from_quat`, `quat_from_R`.
 Users: office-chair-tuck v4 (`move_arms_joint`, `hands_up`, measure pose), stack-cups, bimanual-bucket-rim-pnp.
 
+**Hyper-parameters** are the constants at the top of `code/oc_reach.py` (`NATURAL`, `PRIOR`, `CAP_M`, `CAP_RAD`). They stay in that module because other skills load it by file path. `CAP_M` and `CAP_RAD` copy the backend's per-call caps: check them against robot-interface.
+
 ## Checks
 
 - Each waypoint: `rby1_check` accepted; after it, loads < 130 % (else stop).

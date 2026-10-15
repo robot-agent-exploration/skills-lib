@@ -10,11 +10,7 @@ import numpy as np
 
 import geom
 
-COLOURS = {  # OpenCV HSV ranges (h 0-180); fallback only, Gemini masks are the default
-    'yellow': [((20, 120, 120), (38, 255, 255))],
-    'red': [((0, 120, 80), (8, 255, 255)), ((165, 120, 80), (180, 255, 255))],
-    'orange': [((8, 140, 120), (20, 255, 255))],
-}
+from stack_cups_params import COLOURS  # hyper-parameters: stack_cups_params.py
 
 
 def colour_mask(hsv, name):
