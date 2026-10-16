@@ -123,7 +123,7 @@ robot calls by the host: ask between motions.
 | lift | haiku | lift frame | Is the box held level, clear of the floor? | yes / no | yes | set down, stop |
 | approach_table | haiku | edge view | Is the table top directly in front of the held box, nothing where it goes? | yes / no | yes | stop |
 | place / set_down | haiku + Gemini check (verify) | verify frame | Is the box standing on the top / floor with both grippers clear? | yes / no | yes | stop |
-| any motion step (monitor) | haiku, background | runtime/stream newest frame every ~10 s | box tipping / slipping / pushed, base pushing the box, a person within 0.5 m? | ok / anomaly | ok | write <run>/STOP + rby1_hold |
+| any motion step (monitor) | haiku, background | runtime/stream newest frame every ~10 s | box tipping / slipping / pushed, base pushing the box, a person within 0.5 m? | ok / anomaly | ok | write \<run>/STOP + rby1_hold |
 
 Monitor protocol: the runner writes `<run>/status.json`; a background haiku subagent reads it and
 `python3 -m api.stream latest`, looks at the newest frame and on a clear anomaly writes `<run>/STOP`; the next
